@@ -6,7 +6,7 @@
       <a
         href="../index2.html"
         class="link-dark text-center link-offset-2 link-opacity-100 link-opacity-50-hover">
-        <h1 class="mb-0"><b>Admin</b>LTE</h1>
+        <h1 class="mb-0"><?= $setting['app_name'] ?></h1>
       </a>
     </div>
     <div class="card-body login-card-body">
