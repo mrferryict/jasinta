@@ -8,7 +8,9 @@ class AuthController extends BaseController
 {
    public function login()
    {
-      return view('auth/login');
+      $config = (array) $this->config;
+      $data = ['setting' => $config['settings']];
+      return view('auth/login', $data);
    }
 
    public function loginProcess()
