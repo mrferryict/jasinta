@@ -14,5 +14,7 @@ class All extends Seeder
         $this->call('SemestersSeeder');
         $this->call('SettingsSeeder');
         $this->call('StagesSeeder');
+        $this->call('UserSeeder');
+        $this->call('UserRolesSeeder');
     }
 }

@@ -8,7 +8,6 @@ use CodeIgniter\HTTP\IncomingRequest;
 use CodeIgniter\HTTP\RequestInterface;
 use CodeIgniter\HTTP\ResponseInterface;
 use Psr\Log\LoggerInterface;
-use Config\AppConfig;
 
 /**
  * Class BaseController
@@ -43,12 +42,6 @@ abstract class BaseController extends Controller
      * The creation of dynamic property is deprecated in PHP 8.2.
      */
     // protected $session;
-    protected $config;
-
-    public function __construct()
-    {
-        $this->config = new AppConfig(); // Inisialisasi AppConfig
-    }
 
     /**
      * @return void
@@ -61,5 +54,6 @@ abstract class BaseController extends Controller
         // Preload any models, libraries, etc, here.
 
         // E.g.: $this->session = service('session');
+
     }
 }

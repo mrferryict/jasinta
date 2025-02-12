@@ -9,9 +9,9 @@ class MajorsSeeder extends Seeder
     public function run()
     {
         $data = [
-            ['id' => 1, 'name' => 'S1/Teknik Informatika'],
-            ['id' => 2, 'name' => 'S1/Sistem Informasi'],
-            ['id' => 3, 'name' => 'D3/Manajemen Informatika'],
+            ['id' => 1, 'name' => 'S1/TEKNIK INFORMATIKA'],
+            ['id' => 2, 'name' => 'S1/SISTEM INFORMASI'],
+            ['id' => 3, 'name' => 'D3/MANAJEMEN INFORMATIKA'],
         ];
 
         $this->db->table('majors')->insertBatch($data);

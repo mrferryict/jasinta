@@ -6,8 +6,7 @@ use CodeIgniter\Config\BaseConfig;
 
 class Email extends BaseConfig
 {
-    public string $fromEmail  = '';
-    public string $fromName   = '';
+
     public string $recipients = '';
 
     /**
@@ -25,25 +24,21 @@ class Email extends BaseConfig
      */
     public string $mailPath = '/usr/sbin/sendmail';
 
-    /**
-     * SMTP Server Hostname
-     */
-    public string $SMTPHost = '';
+    public $SMTPHost = 'smtp.yourmailserver.com';
+    public $SMTPUser = 'your-email@example.com';
+    public $SMTPPass = 'your-email-password';
+    public $SMTPPort = 465;
+    public $fromEmail = 'your-email@example.com';
+    public $fromName = 'Sistem Tugas Akhir';
 
     /**
-     * SMTP Username
+     * SMTP Encryption.
+     *
+     * @var string '', 'tls' or 'ssl'. 'tls' will issue a STARTTLS command
+     *             to the server. 'ssl' means implicit SSL. Connection on port
+     *             465 should set this to ''.
      */
-    public string $SMTPUser = '';
-
-    /**
-     * SMTP Password
-     */
-    public string $SMTPPass = '';
-
-    /**
-     * SMTP Port
-     */
-    public int $SMTPPort = 25;
+    public string $SMTPCrypto = 'ssl';
 
     /**
      * SMTP Timeout (in seconds)
@@ -54,15 +49,6 @@ class Email extends BaseConfig
      * Enable persistent SMTP connections
      */
     public bool $SMTPKeepAlive = false;
-
-    /**
-     * SMTP Encryption.
-     *
-     * @var string '', 'tls' or 'ssl'. 'tls' will issue a STARTTLS command
-     *             to the server. 'ssl' means implicit SSL. Connection on port
-     *             465 should set this to ''.
-     */
-    public string $SMTPCrypto = 'tls';
 
     /**
      * Enable word-wrap
