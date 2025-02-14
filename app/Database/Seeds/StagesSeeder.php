@@ -9,19 +9,21 @@ class StagesSeeder extends Seeder
     public function run()
     {
         $data = [
-            ['id' => 1, 'name' => 'DAFTAR PROPOSAL'],
-            ['id' => 2, 'name' => 'PROPOSAL'],
-            ['id' => 3, 'name' => 'BIMBINGAN BAB-1'],
-            ['id' => 4, 'name' => 'BIMBINGAN BAB-2'],
-            ['id' => 5, 'name' => 'BIMBINGAN BAB-3'],
-            ['id' => 6, 'name' => 'BIMBINGAN BAB-4'],
-            ['id' => 7, 'name' => 'BIMBINGAN BAB-5'],
-            ['id' => 8, 'name' => 'DAFTAR SIDANG'],
-            ['id' => 9, 'name' => 'SIDANG'],
-            ['id' => 10, 'name' => 'REVISI AKHIR'],
-            ['id' => 11, 'name' => 'SELESAI'],
+            ['id' => 1, 'name' => 'PENDAFTARAN'],
+            ['id' => 2, 'name' => 'SYARAT PROPOSAL'],
+            ['id' => 3, 'name' => 'PROPOSAL'],
+            ['id' => 4, 'name' => 'BAB 1'],
+            ['id' => 5, 'name' => 'BAB 2'],
+            ['id' => 6, 'name' => 'BAB 3'],
+            ['id' => 7, 'name' => 'BAB 4'],
+            ['id' => 8, 'name' => 'BAB 5'],
+            ['id' => 9, 'name' => 'SYARAT SIDANG'],
+            ['id' => 10, 'name' => 'SIDANG'],
+            ['id' => 11, 'name' => 'REVISI'],
+            ['id' => 12, 'name' => 'SKL'],
         ];
 
+        // Menyisipkan data ke dalam tabel 'stages'
         $this->db->table('stages')->insertBatch($data);
     }
 }

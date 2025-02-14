@@ -48,7 +48,7 @@
                   <?php endif; ?>
 
                   <!-- Form Pendaftaran Mahasiswa Baru -->
-                  <form action="<?= base_url('auth/register') ?>" method="post">
+                  <form action="<?= base_url('register') ?>" method="post">
                      <div class="form-group">
                         <label for="name"><?= lang('App.fullName') ?></label>
                         <input type="text" name="name" class="form-control" id="name" required>

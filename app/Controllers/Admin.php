@@ -34,7 +34,50 @@ class Admin extends Controller
 
    public function index()
    {
-      $data = ['settings' => $this->settings, 'sessions' => $this->session];
+      $progressModel = new \App\Models\ProgressModel();
+      $stageModel = new \App\Models\StageModel();
+      $settingsModel = new \App\Models\SettingsModel();
+
+      // **1. TOTAL MAHASISWA PESERTA**
+      $totalStudents = $progressModel->countAll();
+
+      // **2. AMBIL DEADLINE TIAP TAHAPAN**
+      $deadlines = array_column($settingsModel->getAllDeadlines(), 'value', 'key');
+
+      // **3. AMBIL DATA MAHASISWA & HITUNG MAHASISWA ON-TRACK**
+      $students = $progressModel->getStudentProgress();
+      $studentsOnTrack = 0;
+
+      foreach ($students as $student) {
+         $stageKey = 'deadline_' . strtoupper($student['stage']);
+         $deadlineDate = isset($deadlines[$stageKey]) ? strtotime($deadlines[$stageKey]) : null;
+         $stageDate = strtotime($student['stage_date'] ?? date('Y-m-d'));
+
+         // Jika mahasiswa tidak melewati deadline, berarti on-track
+         if ($deadlineDate && $stageDate <= $deadlineDate) {
+            $studentsOnTrack++;
+         }
+      }
+
+      // **4. WAKTU TERSISA SEBELUM DEADLINE SIDANG**
+      $deadlineSidang = strtotime($settingsModel->getSetting('deadline_SIDANG', '2025-06-01'));
+      $remainingDays = ($deadlineSidang - time()) / 86400;
+      $remainingDays = max(0, round($remainingDays)); // Pastikan tidak negatif
+
+      $data = [
+         'settings' => $this->settings,
+         'sessions' => $this->session,
+         'infoBoxes' => [
+            'totalActiveStudents' => $totalStudents,
+            'studentsOnTrack' => $studentsOnTrack,
+            'remainingDaysLeft' => $remainingDays,
+         ],
+         'pageTitle' => 'DASHBOARD',
+         'tableTitle' => lang('App.monitoringTheStagesOfStudents'),
+         'students' => $progressModel->getStudentProgress(),
+         'deadlines' => array_column($progressModel->getStageDeadlines(), 'value', 'key'),
+         'stages' => array_column($stageModel->orderBy('id', 'ASC')->findAll(), 'name'),
+      ];
       return view('admin/dashboard', $data);
    }
 
@@ -51,67 +94,143 @@ class Admin extends Controller
       return view('admin/dosen', $data);
    }
 
-   // ===================== PENGUMUMAN =====================
-   public function pengumuman()
+   // ===================== ANNOUNCEMENTS =====================
+   public function announcement()
    {
-      $data['pengumuman'] = $this->announcementModel->findAll();
-      return view('admin/pengumuman', $data);
+      $data = [
+         'announcements' => $this->announcementModel->getAllAnnouncements(),
+      ];
+
+      return view('admin/announcement', $data);
    }
 
-   // ===================== PESAN =====================
-   public function pesan()
+   public function addAnnouncement()
    {
-      $data['pesan'] = $this->messageModel->findAll();
-      return view('admin/pesan', $data);
+      return view('admin/add_announcement');
    }
 
-   // ===================== PENDAFTARAN BIMBINGAN =====================
-   public function pendaftaranBimbingan()
+   public function saveAnnouncement()
    {
-      return view('admin/pendaftaran_bimbingan');
+      $this->announcementModel->insert([
+         'title' => $this->request->getPost('title'),
+         'message' => $this->request->getPost('message'),
+         'created_at' => date('Y-m-d H:i:s'),
+      ]);
+
+      return redirect()->to('admin/announcement')->with('success', 'Pengumuman berhasil ditambahkan.');
    }
 
-   public function persyaratanPraBimbingan()
+
+
+   // ===================== CHAT =====================
+   public function chat($studentId)
    {
-      return view('admin/persyaratan_pra_bimbingan');
+      $adminId = $this->session->get('user_id');
+      $messages = $this->messageModel->getMessages($studentId, $adminId);
+
+      $data = [
+         'messages' => $messages,
+         'studentId' => $studentId,
+      ];
+
+      return view('admin/chat', $data);
    }
 
-   public function pengajuanProposal()
+   public function sendMessage()
    {
-      return view('admin/pengajuan_proposal');
+      $adminId = $this->session->get('user_id');
+      $studentId = $this->request->getPost('student_id');
+      $message = $this->request->getPost('message');
+
+      $filePath = null;
+      if ($file = $this->request->getFile('attachment')) {
+         if ($file->isValid() && !$file->hasMoved()) {
+            $filePath = $file->store();
+         }
+      }
+
+      $this->messageModel->insert([
+         'sender_id' => $adminId,
+         'receiver_id' => $studentId,
+         'content' => $message,
+         'file_path' => $filePath,
+         'created_at' => date('Y-m-d H:i:s')
+      ]);
+
+      return redirect()->back();
    }
 
-   public function skBimbingan()
+   // ===================== PENDAFTARAN MAHASISWA =====================
+   public function daftarPendaftaran()
    {
-      return view('admin/sk_bimbingan');
+      $data['mahasiswa_pending'] = $this->personModel
+         ->select('persons.*, thesis.stage')
+         ->join('thesis', 'thesis.student_id = persons.id', 'left')
+         ->where('persons.division', 'mahasiswa')
+         ->where('thesis.stage', 'PENDAFTARAN')
+         ->findAll();
+
+      return view('admin/daftar_pendaftaran', $data);
    }
 
-   // ===================== SIDANG DAN REVISI =====================
-   public function persyaratanPraSidang()
+   public function approvePendaftaran($studentId)
    {
-      return view('admin/persyaratan_pra_sidang');
+      // Cek apakah mahasiswa sudah memiliki data thesis
+      $thesis = $this->thesisModel->where('student_id', $studentId)->first();
+
+      if (!$thesis) {
+         // Buat data thesis baru dengan tahap awal
+         $this->thesisModel->insert([
+            'student_id' => $studentId,
+            'title' => null,
+            'stage' => 'SYARAT PROPOSAL', // Setelah pendaftaran disetujui, lanjut ke tahap berikutnya
+            'created_at' => date('Y-m-d H:i:s'),
+         ]);
+      } else {
+         // Update stage jika thesis sudah ada
+         $this->thesisModel->update($thesis['id'], ['stage' => 'SYARAT PROPOSAL']);
+      }
+
+      return redirect()->to('/admin/pendaftaran')->with('success', 'Pendaftaran mahasiswa telah disetujui.');
    }
 
-   public function sidang()
+   // ===================== MANAJEMEN SYARAT PROPOSAL =====================
+   public function daftarSyaratProposal()
    {
-      return view('admin/sidang');
+      // Ambil semua syarat proposal
+      $data['requirements'] = $this->requirementModel->where('stage', 'SYARAT PROPOSAL')->findAll();
+
+      return view('admin/daftar_syarat_proposal', $data);
    }
 
-   public function revisiAkhir()
+   public function buatSyaratProposal()
    {
-      return view('admin/revisi_akhir');
+      if ($this->request->getMethod() === 'post') {
+         $syarat = $this->request->getPost('syarat');
+         $tipeJawaban = $this->request->getPost('tipe_jawaban');
+
+         // Simpan syarat ke database
+         $this->requirementModel->insert([
+            'stage' => 'SYARAT PROPOSAL',
+            'description' => $syarat,
+            'answer_type' => $tipeJawaban, // 'text', 'pdf', atau 'image'
+            'created_at' => date('Y-m-d H:i:s'),
+         ]);
+
+         return redirect()->to('/admin/syarat_proposal')->with('success', 'Syarat baru berhasil ditambahkan.');
+      }
+
+      return view('admin/buat_syarat_proposal');
    }
 
-   public function persyaratanPascaSidang()
+   public function approveSyaratProposal($requirementId)
    {
-      return view('admin/persyaratan_pasca_sidang');
+      // Approve syarat proposal
+      $this->requirementModel->update($requirementId, ['approved_at' => date('Y-m-d H:i:s')]);
+
+      return redirect()->to('/admin/syarat_proposal')->with('success', 'Syarat telah disetujui.');
    }
 
-   // ===================== SURAT KETERANGAN LULUS =====================
-   public function suratKeteranganLulus()
-   {
-      return view('admin/surat_keterangan_lulus');
-   }
 
    // ===================== AKTIVITAS PENGGUNA (AUDIT TRAILS) =====================
    public function aktivitasPengguna()

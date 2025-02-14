@@ -48,7 +48,7 @@
    <!--begin::App Wrapper-->
    <div class="app-wrapper">
       <!--begin::Header-->
-      <nav class="app-header navbar navbar-expand bg-body">
+      <nav class="app-header navbar navbar-expand bg-body sticky-top">
          <!--begin::Container-->
          <div class="container-fluid">
             <!--begin::Start Navbar Links-->
@@ -189,8 +189,8 @@
                <!--begin::User Menu Dropdown-->
                <li class="nav-item dropdown user-menu">
                   <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
-                     <span class="d-none d-md-inline text-uppercase">
-                        <?= session()->get('name') ?> | <?= session()->get('division') ?>
+                     <span class="d-none d-md-inline text-uppercase"><i class="bi bi-person-circle"></i>
+                        <span class="fw-bold ms-2 me-2"><?= session()->get('name') ?></span> <small>[<?= session()->get('division') ?>]</small>
                      </span>
 
                   </a>
@@ -203,7 +203,7 @@
                            <i class="bi bi-envelope me-2"></i> <?= lang('App.profile') ?>
                         </a>
                         <div class="dropdown-divider"></div>
-                        <a href="<?= base_url() ?>" class="dropdown-item">
+                        <a href="<?= base_url('auth/logout') ?>" class="dropdown-item">
                            <i class="bi bi-people-fill me-2"></i> <?= lang('App.signOut') ?>
                         </a>
                         <!--end::Row-->
@@ -219,99 +219,76 @@
       </nav>
       <!--end::Header-->
       <!--begin::Sidebar-->
+      <?php
+      $stages = [
+         'PENDAFTARAN',
+         'SYARAT PROPOSAL',
+         'PROPOSAL',
+         'BAB 1',
+         'BAB 2',
+         'BAB 3',
+         'BAB 4',
+         'BAB 5',
+         'SYARAT SIDANG',
+         'SIDANG',
+         'REVISI',
+         'SKL'
+      ];
+
+      // Ambil tahapan terakhir mahasiswa langsung dari database
+      $studentId = session()->get('user_id'); // Ambil ID mahasiswa yang login
+      $progressModel = new \App\Models\ProgressModel();
+
+      $currentStage = $progressModel
+         ->select('stages.name')
+         ->join('stages', 'stages.id = progress.stage_id')
+         ->join('thesis', 'thesis.id = progress.thesis_id')
+         ->where('thesis.student_id', $studentId)
+         ->orderBy('progress.created_at', 'DESC') // Ambil stage terbaru
+         ->limit(1)
+         ->get()
+         ->getRowArray()['name'] ?? 'PENDAFTARAN';
+
+      // Tentukan apakah tahapan sudah terbuka
+      $stageIndex = array_search($currentStage, $stages);
+      ?>
+
       <aside class="app-sidebar bg-body-secondary shadow" data-bs-theme="dark">
-         <!--begin::Sidebar Brand-->
          <div class="sidebar-brand">
-            <!--begin::Brand Link-->
-            <a href="./index.html" class="brand-link">
-               <!--begin::Brand Image-->
-               <img
-                  src="<?= f_images('logo_jasinta_light.png') ?>"
-                  alt="AdminLTE Logo"
-                  class="brand-image opacity-75 shadow" />
-               <!--end::Brand Image-->
-               <!--begin::Brand Text-->
+            <a href="<?= base_url('student/dashboard') ?>" class="brand-link">
+               <img src="<?= f_images('logo_jasinta_light.png') ?>" alt="Logo JASINTA" class="brand-image" />
                <span class="brand-text fw-light"><?= lang('App.name') ?></span>
-               <!--end::Brand Text-->
             </a>
-            <!--end::Brand Link-->
          </div>
-         <!--end::Sidebar Brand-->
-         <!--begin::Sidebar Wrapper-->
+
          <div class="sidebar-wrapper">
             <nav class="mt-2">
-               <!--begin::Sidebar Menu-->
                <ul class="nav sidebar-menu flex-column" data-lte-toggle="treeview" role="menu" data-accordion="false">
 
-
+                  <!-- Dashboard -->
                   <li class="nav-item">
-                     <a href="beranda.html" class="nav-link active">
+                     <a href="<?= base_url('student/dashboard') ?>" class="nav-link active">
                         <i class="nav-icon bi bi-house-door"></i>
-                        <p>Beranda</p>
+                        <p>Dashboard</p>
                      </a>
                   </li>
 
-                  <!-- Menu untuk ADMINISTRATOR -->
-                  <?php if (in_array('ADMINISTRATOR', session()->get('roles'))): ?>
-                     <?php $menus = [
-                        ['url' => '#', 'icon' => 'bi-pencil-square', 'label' => 'Pendaftaran Bimbingan'],
-                        ['url' => '#', 'icon' => 'bi-file-earmark-check', 'label' => 'Syarat Pra-Bimbingan'],
-                        ['url' => '#', 'icon' => 'bi-file-text', 'label' => 'Pengajuan Proposal'],
-                        ['url' => '#', 'icon' => 'bi-file-earmark-medical', 'label' => 'SK Bimbingan'],
-                        ['url' => '#', 'icon' => 'bi-file-earmark-check', 'label' => 'Syarat Pra-Sidang'],
-                        ['url' => '#', 'icon' => 'bi-people', 'label' => 'Sidang'],
-                        ['url' => '#', 'icon' => 'bi-arrow-repeat', 'label' => 'Revisi Akhir'],
-                        ['url' => '#', 'icon' => 'bi-file-earmark-plus', 'label' => 'Syarat Pasca-Sidang'],
-                        ['url' => '#', 'icon' => 'bi-file-earmark-text', 'label' => 'SK Lulus Sementara']
-                     ]; ?>
-                  <?php endif; ?>
-
-                  <!-- Menu untuk MAHASISWA -->
-                  <?php if (in_array('MAHASISWA', session()->get('roles'))): ?>
-                     <?php $menus = [
-                        ['url' => '#', 'icon' => 'bi-pencil-square', 'label' => 'Pendaftaran Bimbingan'],
-                        ['url' => '#', 'icon' => 'bi-file-earmark-check', 'label' => 'Syarat Pra-Bimbingan'],
-                        ['url' => '#', 'icon' => 'bi-file-text', 'label' => 'Pengajuan Proposal'],
-                        ['url' => '#', 'icon' => 'bi-file-earmark-medical', 'label' => 'SK Bimbingan'],
-                        ['url' => '#', 'icon' => 'bi-file-earmark-check', 'label' => 'Syarat Pra-Sidang'],
-                        ['url' => '#', 'icon' => 'bi-people', 'label' => 'Sidang'],
-                        ['url' => '#', 'icon' => 'bi-arrow-repeat', 'label' => 'Revisi Akhir'],
-                        ['url' => '#', 'icon' => 'bi-file-earmark-plus', 'label' => 'Syarat Pasca-Sidang'],
-                        ['url' => '#', 'icon' => 'bi-file-earmark-text', 'label' => 'SK Lulus Sementara']
-                     ]; ?>
-                  <?php endif; ?>
-
-                  <!-- Menu untuk DOSEN -->
-                  <?php if (in_array('DOSEN', session()->get('roles'))): ?>
-                     <?php $menus = [
-                        ['url' => '#', 'icon' => 'bi-pencil-square', 'label' => 'Pendaftaran Bimbingan'],
-                        ['url' => '#', 'icon' => 'bi-file-earmark-check', 'label' => 'Syarat Pra-Bimbingan'],
-                        ['url' => '#', 'icon' => 'bi-file-text', 'label' => 'Pengajuan Proposal'],
-                        ['url' => '#', 'icon' => 'bi-file-earmark-medical', 'label' => 'SK Bimbingan'],
-                        ['url' => '#', 'icon' => 'bi-file-earmark-check', 'label' => 'Syarat Pra-Sidang'],
-                        ['url' => '#', 'icon' => 'bi-people', 'label' => 'Sidang'],
-                        ['url' => '#', 'icon' => 'bi-arrow-repeat', 'label' => 'Revisi Akhir'],
-                        ['url' => '#', 'icon' => 'bi-file-earmark-plus', 'label' => 'Syarat Pasca-Sidang'],
-                        ['url' => '#', 'icon' => 'bi-file-earmark-text', 'label' => 'SK Lulus Sementara']
-                     ]; ?>
-                  <?php endif; ?>
-
-                  <?php foreach ($menus as $menu): ?>
+                  <!-- Dynamic Stage Menu -->
+                  <?php foreach ($stages as $index => $stage): ?>
                      <li class="nav-item">
-                        <a href="<?= $menu['url'] ?>" class="nav-link">
-                           <i class="nav-icon bi <?= $menu['icon'] ?>"></i>
-                           <p><?= $menu['label'] ?></p>
+                        <a href="<?= $index <= $stageIndex ? base_url('student/' . strtolower(str_replace(' ', '_', $stage))) : '#' ?>"
+                           class="nav-link <?= $index > $stageIndex ? 'disabled text-danger' : '' ?>">
+                           <i class="nav-icon bi <?= $index > $stageIndex ? 'bi-x-circle' : 'bi-check-circle' ?>"></i>
+                           <p><?= $stage ?></p>
                         </a>
                      </li>
                   <?php endforeach; ?>
 
                </ul>
-               <!--end::Sidebar Menu-->
             </nav>
          </div>
-
-         <!--end::Sidebar Wrapper-->
       </aside>
+
       <!--end::Sidebar-->
 
       <?= $this->renderSection('content') ?>

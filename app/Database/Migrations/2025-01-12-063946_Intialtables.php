@@ -37,7 +37,7 @@ class Initialtables extends Migration
             'email'      => ['type' => 'VARCHAR', 'constraint' => 100, 'unique' => true],
             'number'     => ['type' => 'VARCHAR', 'constraint' => 8, 'unique' => true], // NIM utk mahasiswa, NIDN utk Dosen
             'major_id'   => ['type' => 'INT', 'constraint' => 11, 'null' => true],
-            'division'   => ['type' => 'ENUM', 'constraint' => ['MAHASISWA', 'DOSEN', 'ADMINISTRATOR'], 'default' => 'mahasiswa', 'null' => false],
+            'division'   => ['type' => 'ENUM', 'constraint' => ['STUDENT', 'LECTURER', 'ADMIN'], 'default' => 'STUDENT', 'null' => false],
             'semester_id' => ['type' => 'INT', 'constraint' => 11, 'default' => 1, 'null' => true],
             'created_at' => ['type' => 'DATETIME', 'null' => false],
             'updated_at' => ['type' => 'DATETIME', 'null' => true],
@@ -60,7 +60,7 @@ class Initialtables extends Migration
             'id'                  => ['type' => 'INT', 'auto_increment' => true],
             'person_id'           => ['type' => 'INT', 'constraint' => 11, 'null' => true], // Null jika belum diapprove
             'password'            => ['type' => 'VARCHAR', 'constraint' => 255],
-            'status'              => ['type' => 'ENUM', 'constraint' => ['active', 'inactive', 'pending'], 'default' => 'pending'],
+            'status'              => ['type' => 'ENUM', 'constraint' => ['ACTIVE', 'INACTIVE', 'PENDING'], 'default' => 'PENDING'],
             'token'               => ['type' => 'VARCHAR', 'constraint' => 100, 'null' => true],
             'token_expired_at'    => ['type' => 'DATETIME', 'null' => true],
             'registered_ip'       => ['type' => 'VARCHAR', 'constraint' => 50, 'null' => false],
@@ -89,7 +89,7 @@ class Initialtables extends Migration
         // Tabel stages (Tahapan Tugas Akhir)
         $this->forge->addField([
             'id'         => ['type' => 'INT', 'constraint' => 11],
-            'name'       => ['type' => 'ENUM', 'constraint' => ['PENDAFTARAN', 'PRASYARAT PROPOSAL', 'PROPOSAL', 'BIMBINGAN BAB 1', 'BIMBINGAN BAB 2', 'BIMBINGAN BAB 3', 'BIMBINGAN BAB 4', 'BIMBINGAN BAB 5', 'PRASYARAT SIDANG', 'SIDANG', 'REVISI SIDANG', 'SKL SEMENTARA'], 'null' => false],
+            'name'       => ['type' => 'ENUM', 'constraint' => ['PENDAFTARAN', 'SYARAT PROPOSAL', 'PROPOSAL', 'BAB 1', 'BAB 2', 'BAB 3', 'BAB 4', 'BAB 5', 'SYARAT SIDANG', 'SIDANG', 'REVISI', 'SKL'], 'null' => false],
         ]);
         $this->forge->addKey('id', true);
         $this->forge->createTable('stages');
@@ -127,15 +127,13 @@ class Initialtables extends Migration
         $this->forge->addField([
             'id'         => ['type' => 'INT', 'auto_increment' => true],
             'thesis_id'  => ['type' => 'INT', 'null' => false],
-            'person_id'  => ['type' => 'INT', 'null' => false],
             'stage_id'   => ['type' => 'INT', 'null' => false],
-            'description' => ['type' => 'TEXT'],
+            'description' => ['type' => 'TEXT', 'null' => true],
             'created_at' => ['type' => 'DATETIME', 'null' => false],
             'updated_at' => ['type' => 'DATETIME', 'null' => true],
             'deleted_at' => ['type' => 'DATETIME', 'null' => true]
         ]);
         $this->forge->addKey('id', true);
-        $this->forge->addForeignKey('person_id', 'persons', 'id', 'CASCADE', 'CASCADE');
         $this->forge->addForeignKey('stage_id', 'stages', 'id', 'CASCADE', 'CASCADE');
         $this->forge->createTable('progress');
 
@@ -159,7 +157,7 @@ class Initialtables extends Migration
             'id'         => ['type' => 'INT', 'auto_increment' => true],
             'appointment_id' => ['type' => 'INT', 'null' => false],
             'person_id'  => ['type' => 'INT', 'null' => false],
-            'task_type'  => ['type' => 'ENUM', 'constraint' => ['dosen penguji', 'dosen pembimbing materi', 'dosen pembimbing teknis'], 'null' => false],
+            'task_type'  => ['type' => 'ENUM', 'constraint' => ['EXAMINERS', 'MATERIAL SUPERVISORS', 'TECHNICAL SUPERVISORS'], 'null' => false],
             'created_at' => ['type' => 'DATETIME', 'null' => false],
             'updated_at' => ['type' => 'DATETIME', 'null' => true],
             'deleted_at' => ['type' => 'DATETIME', 'null' => true]
@@ -236,6 +234,21 @@ class Initialtables extends Migration
         $this->forge->addKey('id', true);
         $this->forge->addKey('timestamp');
         $this->forge->createTable('ci_sessions', true);
+
+
+        $this->forge->addField([
+            'id'          => ['type' => 'INT', 'auto_increment' => true],
+            'title'       => ['type' => 'VARCHAR', 'constraint' => 255, 'null' => false],
+            'content'     => ['type' => 'TEXT', 'null' => false],
+            'admin_id'    => ['type' => 'INT', 'null' => false], // ID administrator yang membuat pengumuman
+            'created_at'  => ['type' => 'DATETIME', 'null' => false],
+            'updated_at'  => ['type' => 'DATETIME', 'null' => true],
+            'deleted_at'  => ['type' => 'DATETIME', 'null' => true], // Soft delete
+        ]);
+
+        $this->forge->addKey('id', true);
+        $this->forge->addForeignKey('admin_id', 'persons', 'id', 'CASCADE', 'CASCADE'); // Admin dari persons table
+        $this->forge->createTable('announcements');
     }
 
     public function down()
@@ -255,6 +268,7 @@ class Initialtables extends Migration
         $this->forge->dropTable('scores');
         $this->forge->dropTable('scores_matrix');
         $this->forge->dropTable('logs');
+        $this->forge->dropTable('announcements');
         $this->forge->dropTable('settings');
         $this->forge->dropTable('ci_sessions');
     }

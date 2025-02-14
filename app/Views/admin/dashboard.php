@@ -1,159 +1,38 @@
-<?= $this->extend('admin/main') ?>
+<?= $this->extend('layouts/main') ?>
 <?= $this->section('content') ?>
-<!--begin::App Main-->
+<!--begin::Content-->
 <main class="app-main">
-   <!--begin::App Content Header-->
    <div class="app-content-header">
-      <!--begin::Container-->
+      <!-- begin::Page Title -->
       <div class="container-fluid">
-         <!--begin::Row-->
          <div class="row">
             <div class="col-sm-6">
-               <h3 class="mb-0">Dashboard v2</h3>
-            </div>
-            <div class="col-sm-6">
-               <ol class="breadcrumb float-sm-end">
-                  <li class="breadcrumb-item"><a href="#">Home</a></li>
-                  <li class="breadcrumb-item active" aria-current="page">Dashboard v2</li>
-               </ol>
+               <h3 class="mb-0 fw-bold"><?= $pageTitle ?></h3>
             </div>
          </div>
-         <!--end::Row-->
       </div>
-      <!--end::Container-->
+      <!-- end::Page Title -->
    </div>
    <div class="app-content">
-      <!--begin::Container-->
+      <!-- begin::Info Box -->
       <div class="container-fluid">
-         <!-- Info boxes -->
-         <div class="row">
-            <div class="col-12 col-sm-6 col-md-3">
-               <div class="info-box">
-                  <span class="info-box-icon text-bg-primary shadow-sm">
-                     <i class="bi bi-gear-fill"></i>
-                  </span>
-                  <div class="info-box-content">
-                     <span class="info-box-text">CPU Traffic</span>
-                     <span class="info-box-number">
-                        10
-                        <small>%</small>
-                     </span>
-                  </div>
-                  <!-- /.info-box-content -->
-               </div>
-               <!-- /.info-box -->
-            </div>
-            <!-- /.col -->
-            <div class="col-12 col-sm-6 col-md-3">
-               <div class="info-box">
-                  <span class="info-box-icon text-bg-danger shadow-sm">
-                     <i class="bi bi-hand-thumbs-up-fill"></i>
-                  </span>
-                  <div class="info-box-content">
-                     <span class="info-box-text">Likes</span>
-                     <span class="info-box-number">41,410</span>
-                  </div>
-                  <!-- /.info-box-content -->
-               </div>
-               <!-- /.info-box -->
-            </div>
-            <!-- /.col -->
-            <!-- fix for small devices only -->
-            <!-- <div class="clearfix hidden-md-up"></div> -->
-            <div class="col-12 col-sm-6 col-md-3">
-               <div class="info-box">
-                  <span class="info-box-icon text-bg-success shadow-sm">
-                     <i class="bi bi-cart-fill"></i>
-                  </span>
-                  <div class="info-box-content">
-                     <span class="info-box-text">Sales</span>
-                     <span class="info-box-number">760</span>
-                  </div>
-                  <!-- /.info-box-content -->
-               </div>
-               <!-- /.info-box -->
-            </div>
-            <!-- /.col -->
-            <div class="col-12 col-sm-6 col-md-3">
-               <div class="info-box">
-                  <span class="info-box-icon text-bg-warning shadow-sm">
-                     <i class="bi bi-people-fill"></i>
-                  </span>
-                  <div class="info-box-content">
-                     <span class="info-box-text">New Members</span>
-                     <span class="info-box-number">2,000</span>
-                  </div>
-                  <!-- /.info-box-content -->
-               </div>
-               <!-- /.info-box -->
-            </div>
-            <!-- /.col -->
-         </div>
-         <!-- /.row -->
-         <!--begin::Row-->
-         <div class="row">
-
-            <div class="col-12">
-               <div class="card">
-                  <div class="card-header">
-                     <h3 class="card-title">DataTable with Search and Sort</h3>
-                  </div>
-                  <!-- /.card-header -->
-                  <div class="card-body">
-                     <table id="example1" class="table table-bordered table-striped">
-                        <thead>
-                           <tr>
-                              <th>ID</th>
-                              <th>Name</th>
-                              <th>Email</th>
-                              <th>Role</th>
-                           </tr>
-                        </thead>
-                        <tbody>
-                           <tr>
-                              <td>1</td>
-                              <td>John Doe</td>
-                              <td>john@example.com</td>
-                              <td>Admin</td>
-                           </tr>
-                           <tr>
-                              <td>2</td>
-                              <td>Jane Smith</td>
-                              <td>jane@example.com</td>
-                              <td>User</td>
-                           </tr>
-                           <tr>
-                              <td>3</td>
-                              <td>Michael Johnson</td>
-                              <td>michael@example.com</td>
-                              <td>Editor</td>
-                           </tr>
-                           <tr>
-                              <td>4</td>
-                              <td>Sarah Brown</td>
-                              <td>sarah@example.com</td>
-                              <td>User</td>
-                           </tr>
-                        </tbody>
-                     </table>
-                  </div>
-                  <!-- /.card-body -->
-               </div>
-               <!-- /.card -->
-            </div>
-            <!-- /.col -->
-
-         </div>
-         <!--end::Row-->
-         <!--begin::Row-->
-
-         <!--end::Row-->
+         <?= view('admin/info_boxes', ['infoBoxes' => $infoBoxes]) ?>
       </div>
-      <!--end::Container-->
-   </div>
-   <!--end::App Content-->
+      <!-- end::Info Box -->
+      <!-- begin::Main Table -->
+      <div class="row">
+         <div class="col-12">
+            <div class="card">
+               <div class="card-header">
+                  <h3 class="card-title fw-bold"><?= $tableTitle ?></h3>
+               </div>
+               <?= view('admin/progress_table') ?>
+            </div>
+         </div>
+         <!-- end::Main Table -->
+      </div>
 </main>
-<!--end::App Main-->
+<!--end::Content-->
 <?= $this->endSection() ?>
 
 <?= $this->section('css') ?>

@@ -44,18 +44,18 @@
                      <div class="alert alert-success"> <?= session()->getFlashdata('success'); ?> </div>
                   <?php endif; ?>
 
-                  <form action="<?= base_url('login') ?>" method="post">
+                  <form action="<?= base_url('auth/login') ?>" method="post">
                      <div class="form-group first">
-                        <label for="email">Email</label>
+                        <label for="email"><?= lang('App.email') ?></label>
                         <input type="email" name="email" class="form-control" id="email" required>
                      </div>
                      <div class="form-group last mb-3">
-                        <label for="password">Password</label>
+                        <label for="password"><?= lang('App.password') ?></label>
                         <input type="password" name="password" class="form-control" id="password" required>
                      </div>
                      <div class="d-flex mb-5 align-items-center">
-                        <span><a href="<?= base_url('forgot-password') ?>"><?= lang('App.forgotPassword') ?></a></span>
-                        <span class="ml-auto"><a href="<?= base_url('register') ?>"><?= lang('App.newRegistration') ?></a></span>
+                        <span><a href="<?= base_url('auth/forgot-password') ?>"><?= lang('App.forgotPassword') ?></a></span>
+                        <span class="ml-auto"><a href="<?= base_url('auth/register') ?>"><?= lang('App.newRegistration') ?></a></span>
                      </div>
                      <input type="submit" value="<?= lang('App.login') ?>" class="btn btn-block btn-primary">
                   </form>

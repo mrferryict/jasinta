@@ -12,9 +12,12 @@ class All extends Seeder
         $this->call('MajorsSeeder');
         $this->call('RolesSeeder');
         $this->call('SemestersSeeder');
-        $this->call('SettingsSeeder');
         $this->call('StagesSeeder');
         $this->call('UserSeeder');
+        $this->call('UserPersonSeeder');
         $this->call('UserRolesSeeder');
+        $this->call('ThesisSeeder');
+        $this->call('ProgressSeeder');
+        $this->call('SettingsSeeder');
     }
 }

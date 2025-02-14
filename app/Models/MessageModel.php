@@ -35,8 +35,12 @@ class MessageModel extends Model
    }
 
    // Tandai pesan sebagai sudah dibaca
-   public function markAsRead($messageId)
+   public function markAsRead($senderId, $receiverId)
    {
-      return $this->update($messageId, ['read_at' => date('Y-m-d H:i:s')]);
+      return $this->where('sender_id', $senderId)
+         ->where('receiver_id', $receiverId)
+         ->where('read_at IS NULL')
+         ->set(['read_at' => date('Y-m-d H:i:s')])
+         ->update();
    }
 }

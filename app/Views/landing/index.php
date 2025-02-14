@@ -55,7 +55,7 @@
     <h1>SISTEM INFORMASI MONITORING TUGAS AKHIR</h1>
     <h3>STMIK JAYAKARTA JAKARTA</h3>
     <img src="<?= f_images('welcome.jpg') ?>" style="height: 60vh;" alt="STMIK Jayakarta">
-    <p><button type="button" class="btn btn-success"><a href="<?= base_url('login') ?>">START</a></button></p>
+    <p><button type="button" class="btn btn-success"><a href="<?= base_url('auth/login') ?>">START</a></button></p>
   </div>
 </body>
 

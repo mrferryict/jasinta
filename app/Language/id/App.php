@@ -26,4 +26,9 @@ return [
    'confirmPassword' => 'Konfirmasi Kata Sandi',
    'nim' => 'NIM',
    'backToLogin' => 'Kembali ke Layar Login',
+   'totalActiveStudents' => 'Total Mahasiswa Peserta',
+   'studentsOnTrack' => 'Mahasiswa Tepat Waktu',
+   'remainingDaysLeft' => 'Waktu tersisa (hari)',
+   'monitoringTheStagesOfStudents' => 'Monitoring Tahapan Tugas Akhir Mahasiswa',
+   'currentStage' => 'Tahapan Saat Ini',
 ];

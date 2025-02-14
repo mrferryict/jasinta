@@ -44,7 +44,7 @@
                      <div class="alert alert-success"> <?= session()->getFlashdata('success'); ?> </div>
                   <?php endif; ?>
 
-                  <form action="<?= base_url('auth/forgot-password') ?>" method="post">
+                  <form action="<?= base_url('forgot-password') ?>" method="post">
                      <div class="form-group first">
                         <label for="email"><?= lang('App.email') ?></label>
                         <input type="email" name="email" class="form-control" id="email" required>

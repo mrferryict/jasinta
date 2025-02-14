@@ -19,4 +19,9 @@ class SettingsModel extends Model
     {
         return $this->findAll();
     }
+
+    public function getAllDeadlines()
+    {
+        return $this->where('key LIKE', 'deadline_%')->findAll();
+    }
 }

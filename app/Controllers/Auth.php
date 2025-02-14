@@ -21,6 +21,17 @@ class Auth extends Controller
 
    public function login()
    {
+      if (session()->has('isLoggedIn')) {
+         // Cek peran pengguna dan arahkan sesuai
+         if (in_array('ADMINISTRATOR', session()->get('roles'))) {
+            return redirect()->to('admin');
+         } elseif (in_array('LECTURER', session()->get('roles'))) {
+            return redirect()->to('lecturer');
+         } elseif (in_array('STUDENT', session()->get('roles'))) {
+            return redirect()->to('student');
+         }
+      }
+
       if (strtolower($this->request->getMethod()) === 'get') {
          return view('auth/login');
       }
@@ -39,7 +50,7 @@ class Auth extends Controller
          return redirect()->back()->with('error', 'Email atau password salah!');
       }
 
-      if ($user['status'] !== 'active') {
+      if ($user['status'] !== 'ACTIVE') {
          return redirect()->back()->with('error', 'Akun belum aktif atau masih dalam status pending.');
       }
 
@@ -54,6 +65,22 @@ class Auth extends Controller
       // Konversi hasil roles menjadi array
       $userRoles = array_column($roles, 'name');
 
+      // Jika user adalah dosen, cek apakah dia punya SK aktif
+      if (in_array('LECTURER', $userRoles)) {
+         $appointmentModel = new \App\Models\AppointmentModel();
+         $activeAppointments = $appointmentModel->getActiveAppointments($user['id']);
+
+         $this->session->set(['appointments' => $activeAppointments]);
+      }
+
+      // Jika user adalah mahasiswa, cek tahapan terakhirnya
+      if (in_array('STUDENT', $userRoles)) {
+         $progressModel = new \App\Models\ProgressModel();
+         $studentStage = $progressModel->getStudentStage($user['id']);
+
+         $this->session->set(['student_stage' => $studentStage['name'] ?? 'PENDAFTARAN']);
+      }
+
       // Simpan data dalam session
       $this->session->set([
          'user_id'   => $user['id'],
@@ -63,7 +90,16 @@ class Auth extends Controller
          'isLoggedIn' => true
       ]);
 
-      return redirect()->to('admin');
+      // **Redirect sesuai role utama**
+      if (in_array('ADMIN', $userRoles)) {
+         return redirect()->to('admin');
+      } elseif (in_array('LECTURER', $userRoles)) {
+         return redirect()->to('lecturer');
+      } elseif (in_array('STUDENT', $userRoles)) {
+         return redirect()->to('student');
+      }
+
+      return redirect()->to('auth/login')->with('error', 'Role pengguna tidak dikenali!');
    }
 
 
@@ -113,7 +149,7 @@ class Auth extends Controller
 
       $this->userModel->insert($userData);
 
-      return redirect()->to('login')->with('success', 'Registrasi berhasil! Silakan cek email untuk verifikasi.');
+      return redirect()->to('auth/login')->with('success', 'Registrasi berhasil! Silakan cek email untuk verifikasi.');
    }
 
 
@@ -144,9 +180,8 @@ class Auth extends Controller
          'token' => $token,
          'token_expired_at' => date('Y-m-d H:i:s', strtotime('+1 hour'))
       ]);
-
       // Kirim email reset password (dummy untuk sekarang)
-      return redirect()->to('login')->with('success', 'Silakan cek email untuk reset password.');
+      return redirect()->to('auth/login')->with('success', 'Silakan cek email untuk reset password.');
    }
 
 
@@ -155,9 +190,8 @@ class Auth extends Controller
       $user = $this->userModel->where('token', $token)->first();
 
       if (!$user || strtotime($user['token_expired_at']) < time()) {
-         return redirect()->to('/forgot-password')->with('error', 'Token tidak valid atau sudah kedaluwarsa!');
+         return redirect()->to('auth/forgot-password')->with('error', 'Token tidak valid atau sudah kedaluwarsa!');
       }
-
       return view('auth/reset_password', ['token' => $token]);
    }
 
@@ -169,7 +203,7 @@ class Auth extends Controller
       $user = $this->userModel->where('token', $token)->first();
 
       if (!$user) {
-         return redirect()->to('forgot-password')->with('error', 'Token tidak valid!');
+         return redirect()->to('auth/forgot-password')->with('error', 'Token tidak valid!');
       }
 
       $this->userModel->update($user['id'], [
@@ -178,7 +212,7 @@ class Auth extends Controller
          'token_expired_at' => null
       ]);
 
-      return redirect()->to('login')->with('success', 'Password berhasil diubah! Silakan login kembali.');
+      return redirect()->to('auth/login')->with('success', 'Password berhasil diubah! Silakan login kembali.');
    }
 
    public function verifyEmail($token)
@@ -186,7 +220,7 @@ class Auth extends Controller
       $user = $this->userModel->where('token', $token)->first();
 
       if (!$user) {
-         return redirect()->to('login')->with('error', 'Token verifikasi tidak valid!');
+         return redirect()->to('auth/login')->with('error', 'Token verifikasi tidak valid!');
       }
 
       $this->userModel->update($user['id'], [
@@ -196,13 +230,13 @@ class Auth extends Controller
          'token_expired_at' => null
       ]);
 
-      return redirect()->to('login')->with('success', 'Akun berhasil diverifikasi! Silakan login.');
+      return redirect()->to('auth/login')->with('success', 'Akun berhasil diverifikasi! Silakan login.');
    }
 
    public function logout()
    {
       $this->session->destroy();
-      return redirect()->to('login')->with('success', 'Anda telah logout.');
+      return redirect()->to('auth/login')->with('success', 'Anda telah logout.');
    }
 
    protected function sendEmail($to, $subject, $message)
