@@ -20,7 +20,7 @@ class StagesSeeder extends Seeder
             ['id' => 9, 'name' => 'SYARAT SIDANG'],
             ['id' => 10, 'name' => 'SIDANG'],
             ['id' => 11, 'name' => 'REVISI'],
-            ['id' => 12, 'name' => 'SKL'],
+            ['id' => 12, 'name' => 'SKLS'],
         ];
 
         // Menyisipkan data ke dalam tabel 'stages'

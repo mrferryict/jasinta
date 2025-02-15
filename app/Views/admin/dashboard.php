@@ -20,16 +20,18 @@
       </div>
       <!-- end::Info Box -->
       <!-- begin::Main Table -->
-      <div class="row">
-         <div class="col-12">
-            <div class="card">
-               <div class="card-header">
-                  <h3 class="card-title fw-bold"><?= $tableTitle ?></h3>
+      <div class="container-fluid">
+         <div class="row">
+            <div class="col-12">
+               <div class="card">
+                  <div class="card-header">
+                     <h3 class="card-title fw-bold"><?= $tableTitle ?></h3>
+                  </div>
+                  <?= view('admin/progress_table') ?>
                </div>
-               <?= view('admin/progress_table') ?>
             </div>
+            <!-- end::Main Table -->
          </div>
-         <!-- end::Main Table -->
       </div>
 </main>
 <!--end::Content-->
@@ -41,8 +43,6 @@
 <?= $this->endSection() ?>
 
 <?= $this->section('script') ?>
-<!-- jQuery -->
-<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
 <!-- DataTables JS -->
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>

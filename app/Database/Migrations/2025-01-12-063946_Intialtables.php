@@ -12,7 +12,7 @@ class Initialtables extends Migration
         // Tabel semesters (Hanya ada 1 semester yang "active" yang lainnya "not active")
         $this->forge->addField([
             'id' => ['type' => 'INT', 'auto_increment' => true],
-            'name' => ['type' => 'VARCHAR', 'constraint' => 20, 'unique' => true],
+            'name' => ['type' => 'VARCHAR', 'constraint' => 50, 'unique' => true],
             'is_active' => ['type' => 'BOOLEAN', 'default' => true],
             'created_at' => ['type' => 'DATETIME', 'null' => false],
             'updated_at' => ['type' => 'DATETIME', 'null' => true],
@@ -24,7 +24,8 @@ class Initialtables extends Migration
         // Tabel majors (Nama level dan jurusan)
         $this->forge->addField([
             'id'        => ['type' => 'INT', 'auto_increment' => true],
-            'name'      => ['type' => 'ENUM', 'constraint' => ['S1/TEKNIK INFORMATIKA', 'S1/SISTEM INFORMASI', 'D3/MANAJEMEN INFORMATIKA'], 'null' => false],
+            'name'      => ['type' => 'VARCHAR', 'constraint' => 50, 'unique' => true, 'null' => false],
+            // default berisi: []'S1/TEKNIK INFORMATIKA', 'S1/SISTEM INFORMASI', 'D3/MANAJEMEN INFORMATIKA']
             'coordinator_id' => ['type' => 'INT'],
         ]);
         $this->forge->addKey('id', true);
@@ -35,7 +36,8 @@ class Initialtables extends Migration
             'id'         => ['type' => 'INT', 'constraint' => 11, 'auto_increment' => true],
             'name'       => ['type' => 'VARCHAR', 'constraint' => 100],
             'email'      => ['type' => 'VARCHAR', 'constraint' => 100, 'unique' => true],
-            'number'     => ['type' => 'VARCHAR', 'constraint' => 8, 'unique' => true], // NIM utk mahasiswa, NIDN utk Dosen
+            'number'     => ['type' => 'VARCHAR', 'constraint' => 8, 'unique' => true],
+            // berisi NIM jika STUDENT, NIDN jika LECTURER, atau NIP jika ADMIN
             'major_id'   => ['type' => 'INT', 'constraint' => 11, 'null' => true],
             'division'   => ['type' => 'ENUM', 'constraint' => ['STUDENT', 'LECTURER', 'ADMIN'], 'default' => 'STUDENT', 'null' => false],
             'semester_id' => ['type' => 'INT', 'constraint' => 11, 'default' => 1, 'null' => true],
@@ -89,7 +91,7 @@ class Initialtables extends Migration
         // Tabel stages (Tahapan Tugas Akhir)
         $this->forge->addField([
             'id'         => ['type' => 'INT', 'constraint' => 11],
-            'name'       => ['type' => 'ENUM', 'constraint' => ['PENDAFTARAN', 'SYARAT PROPOSAL', 'PROPOSAL', 'BAB 1', 'BAB 2', 'BAB 3', 'BAB 4', 'BAB 5', 'SYARAT SIDANG', 'SIDANG', 'REVISI', 'SKL'], 'null' => false],
+            'name'       => ['type' => 'ENUM', 'constraint' => ['PENDAFTARAN', 'SYARAT PROPOSAL', 'PROPOSAL', 'BAB 1', 'BAB 2', 'BAB 3', 'BAB 4', 'BAB 5', 'SYARAT SIDANG', 'SIDANG', 'REVISI', 'SKLS'], 'null' => false],
         ]);
         $this->forge->addKey('id', true);
         $this->forge->createTable('stages');

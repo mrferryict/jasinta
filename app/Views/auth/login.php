@@ -33,7 +33,7 @@
                         <?= lang('App.JASINTA') ?></h6>
                   </div>
                   <div class="mb-1 mt-5 text-center">
-                     <h6><?= lang('App.pleaseLogin') ?></h6>
+                     <h6><?= lang('App.pleaseLogin', [], null, false) ?></h6>
                   </div>
 
                   <!-- Tampilkan notifikasi pesan sukses atau error -->

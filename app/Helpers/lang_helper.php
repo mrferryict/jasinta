@@ -1,17 +1,27 @@
 <?php
 
-if (!function_exists('lang')) {
-   function lang(string $key)
+if (!function_exists('langUppercase')) {
+   function langUppercase(string $line, array $args = [], ?string $locale = null)
    {
-      $session = session();
-      $locale = $session->get('language') ?? 'en'; // Default bahasa Inggris
-      $langFile = APPPATH . "Language/$locale.php";
+      /** @var \CodeIgniter\Language\Language $language */
+      $language = service('language');
 
-      if (file_exists($langFile)) {
-         $lang = include($langFile);
-         return $lang[$key] ?? $key; // Jika tidak ditemukan, tampilkan key-nya
+      // Simpan locale yang sedang aktif
+      $activeLocale = $language->getLocale();
+
+      // Jika locale berbeda, ubah sementara
+      if (!empty($locale) && $locale !== $activeLocale) {
+         $language->setLocale($locale);
       }
 
-      return $key; // Jika file bahasa tidak ditemukan, kembalikan key asli
+      // Ambil teks berdasarkan key
+      $text = $language->getLine($line, $args);
+
+      // Kembalikan locale ke semula jika diubah sementara
+      if (!empty($locale) && $locale !== $activeLocale) {
+         $language->setLocale($activeLocale);
+      }
+
+      return strtoupper($text);
    }
 }

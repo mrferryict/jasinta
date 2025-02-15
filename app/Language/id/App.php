@@ -31,4 +31,17 @@ return [
    'remainingDaysLeft' => 'Waktu tersisa (hari)',
    'monitoringTheStagesOfStudents' => 'Monitoring Tahapan Tugas Akhir Mahasiswa',
    'currentStage' => 'Tahapan Saat Ini',
+   'home' => 'Beranda',
+   'announcements' => 'Pengumuman',
+   'settings' => 'Pengaturan',
+   'masterData' => 'Data Master',
+   'appointments' => 'Penugasan',
+   'people' => 'Pengguna',
+   'majors' => 'Program Studi',
+   'coordinators' => 'Kaprodi',
+   'monitoring' => 'Pantauan',
+   'messages' => 'Pesan',
+   'supervisions' => 'Bimbingan',
+   'defenses' => 'Sidang',
+   'activityLogs' => 'Aktivitas User'
 ];
