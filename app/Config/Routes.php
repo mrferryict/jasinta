@@ -41,14 +41,14 @@ $routes->group('admin', ['filter' => 'auth:ADMIN'], function ($routes) {
    $routes->post('requirements/create', 'Admin::createRequirement');
    $routes->post('requirements/approve/(:num)', 'Admin::approveRequirement/$1');
    $routes->get('monitoring', 'Admin::monitoring');
-   $routes->get('audit-trails', 'Admin::auditTrails');
+   $routes->get('activity_logs', 'Admin::activityLogs');
 });
 
 // STUDENT ROUTES (Hanya Bisa Diakses oleh Mahasiswa)
 $routes->group('student', ['filter' => 'auth:STUDENT'], function ($routes) {
    $routes->get('/', 'Student::index');
-   $routes->get('registration', 'Student::registration');
-   $routes->get('requirements', 'Student::requirements');
+   $routes->get('registration', 'Student::registration'); // Menampilkan halaman pendaftaran mahasiswa
+   $routes->get('requirements/(:any)', 'Student::requirements/$1');
    $routes->post('requirements/submit', 'Student::submitRequirement');
    $routes->get('thesis', 'Student::thesis');
    $routes->post('thesis/proposal', 'Student::submitProposal');

@@ -19,5 +19,6 @@ class All extends Seeder
         $this->call('ThesisSeeder');
         $this->call('ProgressSeeder');
         $this->call('SettingsSeeder');
+        $this->call('AnnouncementsSeeder');
     }
 }

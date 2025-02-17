@@ -34,12 +34,9 @@ class UserPersonSeeder extends Seeder
          $users[] = [
             'person_id'        => $i, // ID person sesuai dengan iterasi
             'password'         => password_hash('1234', PASSWORD_DEFAULT), // Password default
-            'status'           => 'ACTIVE',
             'token'            => null,
             'token_expired_at' => null,
-            'registered_ip'    => $faker->ipv4,
             'verified_at'      => date('Y-m-d H:i:s'),
-            'approved_at'      => date('Y-m-d H:i:s'),
             'created_at'       => date('Y-m-d H:i:s'),
             'updated_at'       => null,
          ];

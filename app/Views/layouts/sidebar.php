@@ -3,18 +3,19 @@ $roles = session()->get('roles');
 $division = session()->get('division');
 $userId = session()->get('user_id');
 
-$stages = ['PENDAFTARAN', 'SYARAT PROPOSAL', 'PROPOSAL', 'BAB 1', 'BAB 2', 'BAB 3', 'BAB 4', 'BAB 5', 'SYARAT SIDANG', 'SIDANG', 'REVISI', 'SKLS'];
+$s = new \App\Models\StageModel();
+$stages = $s->getStageNames();
+$stageRoutes = $s->getAllStages();
 
 $progressModel = new \App\Models\ProgressModel();
 $currentStage = $progressModel
    ->select('stages.name')
-   ->join('stages', 'stages.id = progress.stage_id')
-   ->join('thesis', 'thesis.id = progress.thesis_id')
+   ->join('stages', 'stages.id = progress.stage_id', 'left')
+   ->join('thesis', 'thesis.id = progress.thesis_id', 'left')
    ->where('thesis.student_id', $userId)
    ->orderBy('progress.created_at', 'DESC')
    ->limit(1)
-   ->get()
-   ->getRowArray()['name'] ?? 'PENDAFTARAN';
+   ->first(); // Menggunakan first() agar lebih aman
 
 $stageIndex = array_search($currentStage, $stages);
 $majorModel = new \App\Models\MajorModel();
@@ -54,13 +55,13 @@ $isKapordi = $majorModel->where('coordinator_id', $userId)->countAllResults() > 
                      </p>
                   </a>
                   <ul class="nav nav-treeview">
-                     <li class="nav-item"><a href="<?= base_url('admin/people') ?>" class="nav-link"><i class="nav-icon bi bi-person-lines-fill"></i>
+                     <li class="nav-item small"><a href="<?= base_url('admin/people') ?>" class="nav-link"><i class="nav-icon bi bi-person-lines-fill"></i>
                            <p><?= langUppercase('App.people') ?></p>
                         </a></li>
-                     <li class="nav-item"><a href="<?= base_url('admin/majors') ?>" class="nav-link"><i class="nav-icon bi bi-journal-bookmark"></i>
+                     <li class="nav-item small"><a href="<?= base_url('admin/majors') ?>" class="nav-link"><i class="nav-icon bi bi-journal-bookmark"></i>
                            <p><?= langUppercase('App.majors') ?></p>
                         </a></li>
-                     <li class="nav-item"><a href="<?= base_url('admin/settings') ?>" class="nav-link"><i class="nav-icon bi bi-gear"></i>
+                     <li class="nav-item small"><a href="<?= base_url('admin/settings') ?>" class="nav-link"><i class="nav-icon bi bi-gear"></i>
                            <p><?= langUppercase('App.settings') ?></p>
                         </a></li>
                   </ul>
@@ -74,11 +75,17 @@ $isKapordi = $majorModel->where('coordinator_id', $userId)->countAllResults() > 
                      </p>
                   </a>
                   <ul class="nav nav-treeview">
-                     <?php $stages = ['PENDAFTARAN', 'SYARAT PROPOSAL', 'PROPOSAL', 'BIMBINGAN', 'SYARAT SIDANG', 'SIDANG', 'REVISI', 'SKLS'] ?>
-                     <?php foreach ($stages as $stage): ?>
-                        <li class="nav-item"><a href="<?= base_url('admin/' . strtolower(str_replace(' ', '_', $stage))) ?>" class="nav-link"><i class="nav-icon bi bi-clipboard-check"></i>
-                              <p><?= $stage ?></p>
-                           </a></li>
+                     <?php foreach ($stageRoutes as $i): ?>
+                        <?php if ($i['name'] == 'BAB 1') : ?>
+                           <li class="nav-item small"><a href="<?= base_url('admin/supervision') ?>" class="nav-link"><i class="nav-icon bi bi-clipboard-check"></i>
+                                 <p><?= langUppercase('App.supervision') ?></p>
+                              </a></li>
+                        <?php elseif ($i['name'] == 'BAB 2' || $i['name'] == 'BAB 3' || $i['name'] == "BAB 4" || $i['name'] == "BAB 5") : ?>
+                        <?php else : ?>
+                           <li class="nav-item small"><a href="<?= base_url('admin/' . $i['route']) ?>" class="nav-link"><i class="nav-icon bi bi-clipboard-check"></i>
+                                 <p><?= $i['name'] ?></p>
+                              </a></li>
+                        <?php endif; ?>
                      <?php endforeach; ?>
                   </ul>
                </li>
@@ -92,7 +99,7 @@ $isKapordi = $majorModel->where('coordinator_id', $userId)->countAllResults() > 
                   <li class="nav-item">
                      <a href="<?= $index <= $stageIndex ? base_url('student/' . strtolower(str_replace(' ', '_', $stage))) : '#' ?>"
                         class="nav-link <?= $index > $stageIndex ? 'disabled text-danger' : '' ?>">
-                        <i class="nav-icon bi <?= $index > $stageIndex ? 'bi-x-circle' : 'bi-check-circle' ?>"></i>
+                        <i class="nav-icon bi <?= $index > $stageIndex ? 'bi-x-circle' : 'bi-arrow-right-circle' ?>"></i>
                         <p><?= $i++ . '. ' . $stage ?></p>
                      </a>
                   </li>

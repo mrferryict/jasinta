@@ -11,16 +11,26 @@ class AuthFilter implements FilterInterface
 {
    public function before(RequestInterface $request, $arguments = null)
    {
-      $session = session();
+      $session = Services::session();
 
-      // Jika user tidak login, redirect ke login
+      // Debug: Cetak argumen yang diterima
+      echo 'Arguments received:';
+      var_dump($arguments);
+      echo '<br>';
+
+      // Debug: Cetak session roles
+      echo 'Session roles:';
+      var_dump($session->get('roles'));
+      echo '<br>';
+      die;
+
+      // Lanjutkan dengan logika filter
       if (!$session->get('isLoggedIn')) {
          return redirect()->to('auth/login')->with('error', 'You must log in first.');
       }
 
-      // Periksa apakah role user sesuai dengan yang diizinkan
       $allowedRole = $arguments[0] ?? null;
-      $userRoles = $session->get('roles'); // User bisa memiliki lebih dari satu role
+      $userRoles = $session->get('roles');
 
       if (!in_array($allowedRole, $userRoles)) {
          return redirect()->to('auth/login')->with('error', 'Access denied.');

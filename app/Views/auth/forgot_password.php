@@ -52,7 +52,7 @@
                      <input type="submit" value="<?= lang('App.resetPassword') ?>" class="btn btn-block btn-primary">
                   </form>
                   <div>
-                     <p class="mt-2 text-center"><a href="<?= base_url('login') ?>"><?= lang('App.backToLogin') ?></a></p>
+                     <p class="mt-2 text-center"><a href="<?= base_url('auth/login') ?>"><?= lang('App.backToLogin') ?></a></p>
                   </div>
                </div>
             </div>

@@ -1,5 +1,4 @@
 <?php
-
 $maxStages = count($stages);
 
 // **SORTING: Urutkan mahasiswa berdasarkan tahapan tertinggi**
@@ -19,11 +18,12 @@ usort($students, function ($a, $b) use ($stages) {
                <?php foreach ($stages as $stage): ?>
                   <?php
                   $currentDate = strtotime(date('Y-m-d'));
-                  $deadlineDate = strtotime($deadlines["deadline_$stage"] ?? '');
+                  $deadlineDate = strtotime($deadlines[$stage] ?? ''); // Ambil deadline dari array deadlines
                   $isLate = $currentDate && $deadlineDate && $currentDate > $deadlineDate;
                   ?>
                   <th class="text-nowrap p-1" style="font-size: 8px; min-width: 50px; background-color: <?= $isLate ? '#dc3545' : '#28a745' ?>; color: white;">
-                     <?= $stage ?><br><small><?= $deadlines["deadline_$stage"] ?></small>
+                     <?= $stage ?><br><small><?= $deadlines[$stage] ? date('d-m-Y', strtotime($deadlines[$stage])) : 'No Deadline' ?></small>
+
                   </th>
                <?php endforeach; ?>
             </tr>
@@ -38,7 +38,7 @@ usort($students, function ($a, $b) use ($stages) {
                   <?php foreach ($stages as $index => $stage): ?>
                      <?php
                      $stageDate = strtotime($student['stage_date'] ?? date('Y-m-d')); // Default ke hari ini
-                     $deadlineDate = strtotime($deadlines["deadline_$stage"] ?? '');
+                     $deadlineDate = strtotime($deadlines[$stage] ?? ''); // Ambil deadline dari array deadlines
                      $isCompleted = $index <= $currentStageIndex; // Tahapan yang sudah dilalui
                      $isLate = $isCompleted && $deadlineDate && $stageDate > $deadlineDate;
                      $cellColor = $isCompleted ? ($isLate ? 'bg-danger text-white' : 'bg-success text-white') : '';

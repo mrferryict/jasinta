@@ -8,249 +8,244 @@ class Initialtables extends Migration
 {
     public function up()
     {
-
-        // Tabel semesters (Hanya ada 1 semester yang "active" yang lainnya "not active")
         $this->forge->addField([
-            'id' => ['type' => 'INT', 'auto_increment' => true],
-            'name' => ['type' => 'VARCHAR', 'constraint' => 50, 'unique' => true],
-            'is_active' => ['type' => 'BOOLEAN', 'default' => true],
-            'created_at' => ['type' => 'DATETIME', 'null' => false],
-            'updated_at' => ['type' => 'DATETIME', 'null' => true],
-            'deleted_at' => ['type' => 'DATETIME', 'null' => true]
+            'id' => ['type' => 'INT', 'auto_increment' => true, 'comment' => 'ID semester (primary key)'],
+            'name' => ['type' => 'VARCHAR', 'constraint' => 50, 'unique' => true, 'comment' => 'Nama semester (e.g., Ganjil 2024/2025)'],
+            'is_active' => ['type' => 'BOOLEAN', 'default' => true, 'comment' => 'Status semester (aktif atau tidak aktif)'],
+            'created_at' => ['type' => 'DATETIME', 'null' => false, 'comment' => 'Waktu pembuatan catatan'],
+            'updated_at' => ['type' => 'DATETIME', 'null' => true, 'comment' => 'Waktu pembaruan catatan terakhir'],
+            'deleted_at' => ['type' => 'DATETIME', 'null' => true, 'comment' => 'Waktu penghapusan catatan (soft delete)']
         ]);
         $this->forge->addKey('id', true);
         $this->forge->createTable('semesters');
 
-        // Tabel majors (Nama level dan jurusan)
         $this->forge->addField([
-            'id'        => ['type' => 'INT', 'auto_increment' => true],
-            'name'      => ['type' => 'VARCHAR', 'constraint' => 50, 'unique' => true, 'null' => false],
-            // default berisi: []'S1/TEKNIK INFORMATIKA', 'S1/SISTEM INFORMASI', 'D3/MANAJEMEN INFORMATIKA']
-            'coordinator_id' => ['type' => 'INT'],
+            'id' => ['type' => 'INT', 'auto_increment' => true, 'comment' => 'ID jurusan (primary key)'],
+            'name' => ['type' => 'VARCHAR', 'constraint' => 50, 'unique' => true, 'null' => false, 'comment' => 'Nama jurusan (e.g., S1 Teknik Informatika)'],
+            'coordinator_id' => ['type' => 'INT', 'comment' => 'ID koordinator jurusan (foreign key ke tabel persons)']
         ]);
         $this->forge->addKey('id', true);
         $this->forge->createTable('majors');
 
-        // Tabel Persons (Identitas Orang dalam Sistem)
         $this->forge->addField([
-            'id'         => ['type' => 'INT', 'constraint' => 11, 'auto_increment' => true],
-            'name'       => ['type' => 'VARCHAR', 'constraint' => 100],
-            'email'      => ['type' => 'VARCHAR', 'constraint' => 100, 'unique' => true],
-            'number'     => ['type' => 'VARCHAR', 'constraint' => 8, 'unique' => true],
-            // berisi NIM jika STUDENT, NIDN jika LECTURER, atau NIP jika ADMIN
-            'major_id'   => ['type' => 'INT', 'constraint' => 11, 'null' => true],
-            'division'   => ['type' => 'ENUM', 'constraint' => ['STUDENT', 'LECTURER', 'ADMIN'], 'default' => 'STUDENT', 'null' => false],
-            'semester_id' => ['type' => 'INT', 'constraint' => 11, 'default' => 1, 'null' => true],
-            'created_at' => ['type' => 'DATETIME', 'null' => false],
-            'updated_at' => ['type' => 'DATETIME', 'null' => true],
-            'deleted_at' => ['type' => 'DATETIME', 'null' => true]
+            'id' => ['type' => 'INT', 'constraint' => 11, 'auto_increment' => true, 'comment' => 'ID person (primary key)'],
+            'name' => ['type' => 'VARCHAR', 'constraint' => 100, 'comment' => 'Nama lengkap person'],
+            'email' => ['type' => 'VARCHAR', 'constraint' => 100, 'unique' => true, 'comment' => 'Alamat email person (unique)'],
+            'number' => ['type' => 'VARCHAR', 'constraint' => 8, 'unique' => true, 'comment' => 'NIM (jika student), NIDN (jika lecturer), atau NIP (jika admin)'],
+            'major_id' => ['type' => 'INT', 'constraint' => 11, 'null' => true, 'comment' => 'ID jurusan (foreign key ke tabel majors)'],
+            'division' => ['type' => 'ENUM', 'constraint' => ['STUDENT', 'LECTURER', 'ADMIN'], 'default' => 'STUDENT', 'null' => false, 'comment' => 'Divisi person (student, lecturer, atau admin)'],
+            'semester_id' => ['type' => 'INT', 'constraint' => 11, 'default' => 1, 'null' => true, 'comment' => 'ID semester (foreign key ke tabel semesters)'],
+            'is_repeating' => ['type' => 'BOOLEAN', 'default' => false, 'null' => false, 'comment' => 'Apakah person mengulang semester?'],
+            'created_at' => ['type' => 'DATETIME', 'null' => false, 'comment' => 'Waktu pembuatan catatan'],
+            'updated_at' => ['type' => 'DATETIME', 'null' => true, 'comment' => 'Waktu pembaruan catatan terakhir'],
+            'deleted_at' => ['type' => 'DATETIME', 'null' => true, 'comment' => 'Waktu penghapusan catatan (soft delete)']
         ]);
         $this->forge->addPrimaryKey('id');
         $this->forge->addForeignKey('major_id', 'majors', 'id', 'CASCADE', 'CASCADE');
         $this->forge->createTable('persons');
 
-        // Tabel Roles (Hak Akses dalam Sistem)
         $this->forge->addField([
-            'id'         => ['type' => 'INT', 'constraint' => 11, 'auto_increment' => true],
-            'name'      => ['type' => 'VARCHAR', 'constraint' => 30, 'null' => false],
+            'id' => ['type' => 'INT', 'constraint' => 11, 'auto_increment' => true, 'comment' => 'ID role (primary key)'],
+            'name' => ['type' => 'VARCHAR', 'constraint' => 30, 'null' => false, 'comment' => 'Nama role (e.g., Administrator, Mahasiswa)']
         ]);
         $this->forge->addPrimaryKey('id');
         $this->forge->createTable('roles');
 
-        // Tabel User (Person yang memiliki hak akses)
         $this->forge->addField([
-            'id'                  => ['type' => 'INT', 'auto_increment' => true],
-            'person_id'           => ['type' => 'INT', 'constraint' => 11, 'null' => true], // Null jika belum diapprove
-            'password'            => ['type' => 'VARCHAR', 'constraint' => 255],
-            'status'              => ['type' => 'ENUM', 'constraint' => ['ACTIVE', 'INACTIVE', 'PENDING'], 'default' => 'PENDING'],
-            'token'               => ['type' => 'VARCHAR', 'constraint' => 100, 'null' => true],
-            'token_expired_at'    => ['type' => 'DATETIME', 'null' => true],
-            'registered_ip'       => ['type' => 'VARCHAR', 'constraint' => 50, 'null' => false],
-            'verified_at'         => ['type' => 'DATETIME', 'null' => true],
-            'approved_at'         => ['type' => 'DATETIME', 'null' => true],
-            'created_at'          => ['type' => 'DATETIME', 'null' => false],
-            'updated_at'          => ['type' => 'DATETIME', 'null' => true]
+            'id' => ['type' => 'INT', 'auto_increment' => true, 'comment' => 'ID user (primary key)'],
+            'person_id' => ['type' => 'INT', 'constraint' => 11, 'null' => true, 'comment' => 'ID person (foreign key ke tabel persons, bisa NULL jika belum diapprove)'],
+            'password' => ['type' => 'VARCHAR', 'constraint' => 255, 'comment' => 'Password user (terenkripsi)'],
+            'token' => ['type' => 'VARCHAR', 'constraint' => 32, 'null' => true, 'comment' => 'Token untuk verifikasi atau reset password'],
+            'token_expired_at' => ['type' => 'DATETIME', 'null' => true, 'comment' => 'Waktu token kadaluarsa'],
+            'verified_at' => ['type' => 'DATETIME', 'null' => true, 'comment' => 'Waktu verifikasi email'],
+            'created_at' => ['type' => 'DATETIME', 'null' => false, 'comment' => 'Waktu pembuatan catatan'],
+            'updated_at' => ['type' => 'DATETIME', 'null' => true, 'comment' => 'Waktu pembaruan catatan terakhir']
         ]);
         $this->forge->addPrimaryKey('id');
         $this->forge->createTable('users');
 
-        // Tabel User Roles (Relasi Users dengan Roles)
         $this->forge->addField([
-            'id'         => ['type' => 'INT', 'constraint' => 11, 'auto_increment' => true],
-            'user_id'    => ['type' => 'INT', 'constraint' => 11],
-            'role_id'    => ['type' => 'INT', 'constraint' => 11],
-            'created_at' => ['type' => 'DATETIME', 'null' => false],
-            'updated_at' => ['type' => 'DATETIME', 'null' => true],
-            'deleted_at' => ['type' => 'DATETIME', 'null' => true]
+            'id' => ['type' => 'INT', 'constraint' => 11, 'auto_increment' => true, 'comment' => 'ID user role (primary key)'],
+            'user_id' => ['type' => 'INT', 'constraint' => 11, 'comment' => 'ID user (foreign key ke tabel users)'],
+            'role_id' => ['type' => 'INT', 'constraint' => 11, 'comment' => 'ID role (foreign key ke tabel roles)'],
+            'created_at' => ['type' => 'DATETIME', 'null' => false, 'comment' => 'Waktu pembuatan catatan'],
+            'updated_at' => ['type' => 'DATETIME', 'null' => true, 'comment' => 'Waktu pembaruan catatan terakhir'],
+            'deleted_at' => ['type' => 'DATETIME', 'null' => true, 'comment' => 'Waktu penghapusan catatan (soft delete)']
         ]);
         $this->forge->addPrimaryKey('id');
         $this->forge->addForeignKey('user_id', 'users', 'id', 'CASCADE', 'CASCADE');
         $this->forge->addForeignKey('role_id', 'roles', 'id', 'CASCADE', 'CASCADE');
         $this->forge->createTable('user_roles');
 
-        // Tabel stages (Tahapan Tugas Akhir)
         $this->forge->addField([
-            'id'         => ['type' => 'INT', 'constraint' => 11],
-            'name'       => ['type' => 'ENUM', 'constraint' => ['PENDAFTARAN', 'SYARAT PROPOSAL', 'PROPOSAL', 'BAB 1', 'BAB 2', 'BAB 3', 'BAB 4', 'BAB 5', 'SYARAT SIDANG', 'SIDANG', 'REVISI', 'SKLS'], 'null' => false],
+            'id' => ['type' => 'INT', 'constraint' => 11, 'comment' => 'ID stage (primary key)'],
+            'name' => ['type' => 'VARCHAR', 'constraint' => 50, 'null' => false, 'comment' => "['PENDAFTARAN', 'SYARAT PROPOSAL', 'PROPOSAL', 'BAB 1', 'BAB 2', 'BAB 3', 'BAB 4', 'BAB 5', 'SYARAT SIDANG', 'SIDANG', 'REVISI', 'SYARAT AKHIR', 'SKLS']"],
+            'route' => ['type' => 'VARCHAR', 'constraint' => 255, 'comment' => 'Route to controllers'],
+            'deadline_at' => ['type' => 'DATETIME', 'null' => true, 'comment' => 'Waktu deadline stage'],
+            'updated_at' => ['type' => 'DATETIME', 'null' => true, 'comment' => 'Waktu pembaruan catatan terakhir']
         ]);
         $this->forge->addKey('id', true);
         $this->forge->createTable('stages');
 
-        // Tabel thesis (Tugas Akhir)
         $this->forge->addField([
-            'id'         => ['type' => 'INT', 'auto_increment' => true],
-            'title'      => ['type' => 'VARCHAR', 'constraint' => 255],
-            'student_id' => ['type' => 'INT', 'null' => false],
-            'created_at' => ['type' => 'DATETIME', 'null' => false],
-            'updated_at' => ['type' => 'DATETIME', 'null' => true],
-            'deleted_at' => ['type' => 'DATETIME', 'null' => true]
+            'id' => ['type' => 'INT', 'auto_increment' => true, 'comment' => 'ID Tugas Akhir (primary key)'],
+            'title' => ['type' => 'VARCHAR', 'constraint' => 255, 'comment' => 'Judul Tugas Akhir'],
+            'student_id' => ['type' => 'INT', 'null' => false, 'comment' => 'ID student (foreign key ke tabel persons)'],
+            'created_at' => ['type' => 'DATETIME', 'null' => false, 'comment' => 'Waktu pembuatan catatan'],
+            'updated_at' => ['type' => 'DATETIME', 'null' => true, 'comment' => 'Waktu pembaruan catatan terakhir'],
+            'deleted_at' => ['type' => 'DATETIME', 'null' => true, 'comment' => 'Waktu penghapusan catatan (soft delete)']
         ]);
         $this->forge->addKey('id', true);
         $this->forge->addForeignKey('student_id', 'persons', 'id', 'CASCADE', 'CASCADE');
         $this->forge->createTable('thesis');
 
-        // Tabel messages (Perpesanan untuk konsultasi dengan administrator, bimbingan dan revisi sidang)
         $this->forge->addField([
-            'id'         => ['type' => 'INT', 'auto_increment' => true],
-            'content'    => ['type' => 'TEXT'],
-            'sender_id'  => ['type' => 'INT', 'null' => false],
-            'receiver_id' => ['type' => 'INT', 'null' => false],
-            'read_at'    => ['type' => 'DATETIME', 'null' => true],
-            'created_at' => ['type' => 'DATETIME', 'null' => false],
-            'updated_at' => ['type' => 'DATETIME', 'null' => true],
-            'deleted_at' => ['type' => 'DATETIME', 'null' => true]
+            'id' => ['type' => 'INT', 'auto_increment' => true, 'comment' => 'ID message (primary key)'],
+            'content' => ['type' => 'TEXT', 'comment' => 'Isi pesan'],
+            'sender_id' => ['type' => 'INT', 'null' => false, 'comment' => 'ID pengirim (foreign key ke tabel persons)'],
+            'receiver_id' => ['type' => 'INT', 'null' => false, 'comment' => 'ID penerima (foreign key ke tabel persons)'],
+            'read_at' => ['type' => 'DATETIME', 'null' => true, 'comment' => 'Waktu pesan dibaca'],
+            'created_at' => ['type' => 'DATETIME', 'null' => false, 'comment' => 'Waktu pembuatan catatan'],
+            'updated_at' => ['type' => 'DATETIME', 'null' => true, 'comment' => 'Waktu pembaruan catatan terakhir'],
+            'deleted_at' => ['type' => 'DATETIME', 'null' => true, 'comment' => 'Waktu penghapusan catatan (soft delete)']
         ]);
         $this->forge->addKey('id', true);
         $this->forge->addForeignKey('sender_id', 'persons', 'id', 'CASCADE', 'CASCADE');
         $this->forge->addForeignKey('receiver_id', 'persons', 'id', 'CASCADE', 'CASCADE');
         $this->forge->createTable('messages');
 
-        // Tabel progress (Menyimpan progress terakhir dari Mahasiswa)
         $this->forge->addField([
-            'id'         => ['type' => 'INT', 'auto_increment' => true],
-            'thesis_id'  => ['type' => 'INT', 'null' => false],
-            'stage_id'   => ['type' => 'INT', 'null' => false],
-            'description' => ['type' => 'TEXT', 'null' => true],
-            'created_at' => ['type' => 'DATETIME', 'null' => false],
-            'updated_at' => ['type' => 'DATETIME', 'null' => true],
-            'deleted_at' => ['type' => 'DATETIME', 'null' => true]
+            'id' => ['type' => 'INT', 'auto_increment' => true, 'comment' => 'ID progress (primary key)'],
+            'thesis_id' => ['type' => 'INT', 'null' => false, 'comment' => 'ID thesis (foreign key ke tabel thesis)'],
+            'stage_id' => ['type' => 'INT', 'null' => false, 'comment' => 'ID stage (foreign key ke tabel stages)'],
+            'description' => ['type' => 'TEXT', 'null' => true, 'comment' => 'Deskripsi progress'],
+            'created_at' => ['type' => 'DATETIME', 'null' => false, 'comment' => 'Waktu pembuatan catatan'],
+            'updated_at' => ['type' => 'DATETIME', 'null' => true, 'comment' => 'Waktu pembaruan catatan terakhir'],
+            'deleted_at' => ['type' => 'DATETIME', 'null' => true, 'comment' => 'Waktu penghapusan catatan (soft delete)']
         ]);
         $this->forge->addKey('id', true);
         $this->forge->addForeignKey('stage_id', 'stages', 'id', 'CASCADE', 'CASCADE');
         $this->forge->createTable('progress');
 
-        // Tabel appointments (Untuk surat penunjukan sebagai dosen pembimbing apa atau dosen penguji)
         $this->forge->addField([
-            'id'         => ['type' => 'INT', 'auto_increment' => true],
-            'number'     => ['type' => 'VARCHAR', 'constraint' => 50],
-            'stage_id'   => ['type' => 'INT', 'null' => false],
-            'thesis_id'  => ['type' => 'INT', 'null' => false],
-            'created_at' => ['type' => 'DATETIME', 'null' => true],
-            'updated_at' => ['type' => 'DATETIME', 'null' => true],
-            'deleted_at' => ['type' => 'DATETIME', 'null' => true]
+            'id' => ['type' => 'INT', 'auto_increment' => true, 'comment' => 'ID appointment (primary key)'],
+            'number' => ['type' => 'VARCHAR', 'constraint' => 50, 'comment' => 'Nomor surat penunjukan'],
+            'stage_id' => ['type' => 'INT', 'null' => false, 'comment' => 'ID stage (foreign key ke tabel stages)'],
+            'thesis_id' => ['type' => 'INT', 'null' => false, 'comment' => 'ID thesis (foreign key ke tabel thesis)'],
+            'created_at' => ['type' => 'DATETIME', 'null' => true, 'comment' => 'Waktu pembuatan catatan'],
+            'updated_at' => ['type' => 'DATETIME', 'null' => true, 'comment' => 'Waktu pembaruan catatan terakhir'],
+            'deleted_at' => ['type' => 'DATETIME', 'null' => true, 'comment' => 'Waktu penghapusan catatan (soft delete)']
         ]);
         $this->forge->addKey('id', true);
         $this->forge->addForeignKey('stage_id', 'stages', 'id', 'CASCADE', 'CASCADE');
         $this->forge->addForeignKey('thesis_id', 'thesis', 'id', 'CASCADE', 'CASCADE');
         $this->forge->createTable('appointments');
 
-        // Tabel appointment_details (detail penunjukan)
         $this->forge->addField([
-            'id'         => ['type' => 'INT', 'auto_increment' => true],
-            'appointment_id' => ['type' => 'INT', 'null' => false],
-            'person_id'  => ['type' => 'INT', 'null' => false],
-            'task_type'  => ['type' => 'ENUM', 'constraint' => ['EXAMINERS', 'MATERIAL SUPERVISORS', 'TECHNICAL SUPERVISORS'], 'null' => false],
-            'created_at' => ['type' => 'DATETIME', 'null' => false],
-            'updated_at' => ['type' => 'DATETIME', 'null' => true],
-            'deleted_at' => ['type' => 'DATETIME', 'null' => true]
+            'id' => ['type' => 'INT', 'auto_increment' => true, 'comment' => 'ID appointment detail (primary key)'],
+            'appointment_id' => ['type' => 'INT', 'null' => false, 'comment' => 'ID appointment (foreign key ke tabel appointments)'],
+            'person_id' => ['type' => 'INT', 'null' => false, 'comment' => 'ID person (foreign key ke tabel persons)'],
+            'task_type' => ['type' => 'ENUM', 'constraint' => ['EXAMINERS', 'MATERIAL SUPERVISORS', 'TECHNICAL SUPERVISORS'], 'null' => false, 'comment' => 'Jenis tugas (EXAMINERS, MATERIAL SUPERVISORS, TECHNICAL SUPERVISORS)'],
+            'created_at' => ['type' => 'DATETIME', 'null' => false, 'comment' => 'Waktu pembuatan catatan'],
+            'updated_at' => ['type' => 'DATETIME', 'null' => true, 'comment' => 'Waktu pembaruan catatan terakhir'],
+            'deleted_at' => ['type' => 'DATETIME', 'null' => true, 'comment' => 'Waktu penghapusan catatan (soft delete)']
         ]);
         $this->forge->addKey('id', true);
         $this->forge->addForeignKey('person_id', 'persons', 'id', 'CASCADE', 'CASCADE');
         $this->forge->createTable('appointment_details');
 
-        // Tabel scores (nilai sidang)
         $this->forge->addField([
-            'id'         => ['type' => 'INT', 'auto_increment' => true],
-            'thesis_id'  => ['type' => 'INT', 'null' => false],
-            'evaluator_id' => ['type' => 'INT', 'null' => false],
-            'score'      => ['type' => 'DECIMAL', 'constraint' => '5,2'],
-            'comments'   => ['type' => 'TEXT', 'null' => true],
-            'created_at' => ['type' => 'DATETIME', 'null' => false],
-            'updated_at' => ['type' => 'DATETIME', 'null' => true],
-            'deleted_at' => ['type' => 'DATETIME', 'null' => true]
+            'id' => ['type' => 'INT', 'auto_increment' => true, 'comment' => 'ID score (primary key)'],
+            'thesis_id' => ['type' => 'INT', 'null' => false, 'comment' => 'ID thesis (foreign key ke tabel thesis)'],
+            'evaluator_id' => ['type' => 'INT', 'null' => false, 'comment' => 'ID evaluator (foreign key ke tabel persons)'],
+            'score' => ['type' => 'DECIMAL', 'constraint' => '5,2', 'comment' => 'Nilai sidang'],
+            'comments' => ['type' => 'TEXT', 'null' => true, 'comment' => 'Komentar evaluator'],
+            'created_at' => ['type' => 'DATETIME', 'null' => false, 'comment' => 'Waktu pembuatan catatan'],
+            'updated_at' => ['type' => 'DATETIME', 'null' => true, 'comment' => 'Waktu pembaruan catatan terakhir'],
+            'deleted_at' => ['type' => 'DATETIME', 'null' => true, 'comment' => 'Waktu penghapusan catatan (soft delete)']
         ]);
         $this->forge->addKey('id', true);
         $this->forge->addForeignKey('thesis_id', 'thesis', 'id', 'CASCADE', 'CASCADE');
         $this->forge->addForeignKey('evaluator_id', 'persons', 'id', 'CASCADE', 'CASCADE');
         $this->forge->createTable('scores');
 
-        // Tabel scores_matrix (rincian penilaian sidang)
         $this->forge->addField([
-            'id'         => ['type' => 'INT', 'auto_increment' => true],
-            'thesis_id'  => ['type' => 'INT'],
-            'criteria'   => ['type' => 'VARCHAR', 'constraint' => 255],
-            'weight' => ['type' => 'DECIMAL', 'constraint' => '5,2'],
-            'created_at' => ['type' => 'DATETIME', 'null' => false],
-            'updated_at' => ['type' => 'DATETIME', 'null' => true],
-            'deleted_at' => ['type' => 'DATETIME', 'null' => true]
+            'id' => ['type' => 'INT', 'auto_increment' => true, 'comment' => 'ID score matrix (primary key)'],
+            'thesis_id' => ['type' => 'INT', 'comment' => 'ID thesis (foreign key ke tabel thesis)'],
+            'criteria' => ['type' => 'VARCHAR', 'constraint' => 255, 'comment' => 'Kriteria penilaian'],
+            'weight' => ['type' => 'DECIMAL', 'constraint' => '5,2', 'comment' => 'Bobot kriteria'],
+            'created_at' => ['type' => 'DATETIME', 'null' => false, 'comment' => 'Waktu pembuatan catatan'],
+            'updated_at' => ['type' => 'DATETIME', 'null' => true, 'comment' => 'Waktu pembaruan catatan terakhir'],
+            'deleted_at' => ['type' => 'DATETIME', 'null' => true, 'comment' => 'Waktu penghapusan catatan (soft delete)']
         ]);
         $this->forge->addKey('id', true);
         $this->forge->addForeignKey('thesis_id', 'thesis', 'id', 'CASCADE', 'CASCADE');
         $this->forge->createTable('scores_matrix');
 
-        // Tabel logs (catatan aktivitas)
         $this->forge->addField([
-            'id'         => ['type' => 'INT', 'auto_increment' => true],
-            'actor_id'   => ['type' => 'INT', 'null' => false],
-            'thesis_id'  => ['type' => 'INT', 'null' => true],
-            'ip' => ['type' => 'VARCHAR', 'constraint' => 50],
-            'action' => ['type' => 'VARCHAR', 'constraint' => 255],
-            'description' => ['type' => 'TEXT', 'null' => true],
-            'created_at' => ['type' => 'DATETIME', 'null' => false],
-            'updated_at' => ['type' => 'DATETIME', 'null' => true],
-            'deleted_at' => ['type' => 'DATETIME', 'null' => true]
+            'id' => ['type' => 'INT', 'auto_increment' => true, 'comment' => 'ID log (primary key)'],
+            'actor_id' => ['type' => 'INT', 'null' => false, 'comment' => 'ID actor (foreign key ke tabel persons)'],
+            'thesis_id' => ['type' => 'INT', 'null' => true, 'comment' => 'ID thesis (foreign key ke tabel thesis, bisa NULL)'],
+            'ip_address' => ['type' => 'VARCHAR', 'constraint' => 45, 'null' => false, 'comment' => 'IP address actor'],
+            'action' => ['type' => 'VARCHAR', 'constraint' => 255, 'comment' => 'Jenis aksi yang dilakukan'],
+            'description' => ['type' => 'TEXT', 'null' => true, 'comment' => 'Deskripsi log'],
+            'created_at' => ['type' => 'DATETIME', 'null' => false, 'comment' => 'Waktu pembuatan catatan'],
+            'updated_at' => ['type' => 'DATETIME', 'null' => true, 'comment' => 'Waktu pembaruan catatan terakhir'],
+            'deleted_at' => ['type' => 'DATETIME', 'null' => true, 'comment' => 'Waktu penghapusan catatan (soft delete)']
         ]);
         $this->forge->addKey('id', true);
         $this->forge->addForeignKey('actor_id', 'persons', 'id', 'CASCADE', 'CASCADE');
         $this->forge->addForeignKey('thesis_id', 'thesis', 'id', 'CASCADE', 'SET NULL');
         $this->forge->createTable('logs');
 
-        // Tabel settings (Menyimpan pengaturan aplikasi)
         $this->forge->addField([
-            'id'         => ['type' => 'INT', 'auto_increment' => true],
-            'key'        => ['type' => 'VARCHAR', 'constraint' => 255],
-            'value'      => ['type' => 'VARCHAR', 'constraint' => 255],
-            'created_at' => ['type' => 'DATETIME', 'null' => false],
-            'updated_at' => ['type' => 'DATETIME', 'null' => true],
-            'deleted_at' => ['type' => 'DATETIME', 'null' => true]
+            'id' => ['type' => 'INT', 'auto_increment' => true, 'comment' => 'ID setting (primary key)'],
+            'key' => ['type' => 'VARCHAR', 'constraint' => 255, 'comment' => 'Key setting'],
+            'value' => ['type' => 'VARCHAR', 'constraint' => 255, 'comment' => 'Value setting'],
+            'created_at' => ['type' => 'DATETIME', 'null' => false, 'comment' => 'Waktu pembuatan catatan'],
+            'updated_at' => ['type' => 'DATETIME', 'null' => true, 'comment' => 'Waktu pembaruan catatan terakhir'],
+            'deleted_at' => ['type' => 'DATETIME', 'null' => true, 'comment' => 'Waktu penghapusan catatan (soft delete)']
         ]);
         $this->forge->addKey('id', true);
         $this->forge->createTable('settings');
 
         $this->forge->addField([
-            'id'         => ['type' => 'VARCHAR', 'constraint' => 128, 'null' => false],
-            'ip_address' => ['type' => 'VARCHAR', 'constraint' => 45, 'null' => false],
-            'timestamp'  => ['type' => 'INT', 'constraint' => 10, 'unsigned' => true, 'null' => false, 'default' => 0],
-            'data'       => ['type' => 'TEXT', 'null' => false]
+            'id' => ['type' => 'VARCHAR', 'constraint' => 128, 'null' => false, 'comment' => 'ID session (primary key)'],
+            'ip_address' => ['type' => 'VARCHAR', 'constraint' => 45, 'null' => false, 'comment' => 'IP address user'],
+            'timestamp' => ['type' => 'INT', 'constraint' => 10, 'unsigned' => true, 'null' => false, 'default' => 0, 'comment' => 'Waktu session terakhir diakses'],
+            'data' => ['type' => 'TEXT', 'null' => false, 'comment' => 'Data session']
         ]);
         $this->forge->addKey('id', true);
         $this->forge->addKey('timestamp');
         $this->forge->createTable('ci_sessions', true);
 
+        $this->forge->addField([
+            'id' => ['type' => 'INT', 'auto_increment' => true, 'comment' => 'ID announcement (primary key)'],
+            'title' => ['type' => 'VARCHAR', 'constraint' => 255, 'null' => false, 'comment' => 'Judul pengumuman'],
+            'content' => ['type' => 'TEXT', 'null' => false, 'comment' => 'Isi pengumuman'],
+            'admin_id' => ['type' => 'INT', 'null' => false, 'comment' => 'ID administrator (foreign key ke tabel persons)'],
+            'created_at' => ['type' => 'DATETIME', 'null' => false, 'comment' => 'Waktu pembuatan catatan'],
+            'updated_at' => ['type' => 'DATETIME', 'null' => true, 'comment' => 'Waktu pembaruan catatan terakhir'],
+            'deleted_at' => ['type' => 'DATETIME', 'null' => true, 'comment' => 'Waktu penghapusan catatan (soft delete)']
+        ]);
+        $this->forge->addKey('id', true);
+        $this->forge->addForeignKey('admin_id', 'persons', 'id', 'CASCADE', 'CASCADE');
+        $this->forge->createTable('announcements');
 
         $this->forge->addField([
-            'id'          => ['type' => 'INT', 'auto_increment' => true],
-            'title'       => ['type' => 'VARCHAR', 'constraint' => 255, 'null' => false],
-            'content'     => ['type' => 'TEXT', 'null' => false],
-            'admin_id'    => ['type' => 'INT', 'null' => false], // ID administrator yang membuat pengumuman
-            'created_at'  => ['type' => 'DATETIME', 'null' => false],
-            'updated_at'  => ['type' => 'DATETIME', 'null' => true],
-            'deleted_at'  => ['type' => 'DATETIME', 'null' => true], // Soft delete
+            'id' => ['type' => 'INT', 'constraint' => 11, 'unsigned' => true, 'auto_increment' => true, 'comment' => 'ID temporary user (primary key)'],
+            'name' => ['type' => 'VARCHAR', 'constraint' => 255, 'null' => false, 'comment' => 'Nama lengkap pendaftar'],
+            'email' => ['type' => 'VARCHAR', 'constraint' => 255, 'null' => false, 'unique' => true, 'comment' => 'Alamat email pendaftar (unique)'],
+            'nim' => ['type' => 'CHAR', 'constraint' => 8, 'null' => false, 'comment' => 'NIM pendaftar'],
+            'is_repeating' => ['type' => 'BOOLEAN', 'default' => false, 'null' => false, 'comment' => 'Apakah pendaftar mengulang semester?'],
+            'password' => ['type' => 'VARCHAR', 'constraint' => 255, 'comment' => 'Password pendaftar (terenkripsi)'],
+            'ip_address' => ['type' => 'VARCHAR', 'constraint' => 45, 'null' => false, 'comment' => 'IP address pendaftar saat registrasi'],
+            'activation_token' => ['type' => 'VARCHAR', 'constraint' => 32, 'null' => false, 'unique' => true, 'comment' => 'Token aktivasi pendaftar (unique)'],
+            'created_at' => ['type' => 'DATETIME', 'null' => false, 'comment' => 'Waktu pembuatan catatan'],
+            'expired_at' => ['type' => 'DATETIME', 'null' => false, 'comment' => 'Waktu token aktivasi kadaluarsa']
         ]);
-
         $this->forge->addKey('id', true);
-        $this->forge->addForeignKey('admin_id', 'persons', 'id', 'CASCADE', 'CASCADE'); // Admin dari persons table
-        $this->forge->createTable('announcements');
+        $this->forge->createTable('temporary_users');
     }
 
     public function down()
@@ -270,8 +265,9 @@ class Initialtables extends Migration
         $this->forge->dropTable('scores');
         $this->forge->dropTable('scores_matrix');
         $this->forge->dropTable('logs');
-        $this->forge->dropTable('announcements');
         $this->forge->dropTable('settings');
         $this->forge->dropTable('ci_sessions');
+        $this->forge->dropTable('announcements');
+        $this->forge->dropTable('temporary_users');
     }
 }

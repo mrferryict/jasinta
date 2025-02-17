@@ -18,18 +18,6 @@ class SettingsSeeder extends Seeder
             ['key' => 'copyright', 'value' => ' - &copy;2025 JASINTA - STMIK JAYAKARTA SISTEM INFORMASI MONITORING TUGAS AKHIR', 'created_at' => date('Y-m-d H:i:s')],
         ];
 
-        // Tambahkan deadline untuk setiap stage, mulai dari '2024-11-01' dengan interval 10 hari
-        $baseDate = '2024-10-01';
-
-        foreach ($stages as $index => $stage) {
-            $deadlineDate = date('Y-m-d', strtotime($baseDate . " + " . ($index * 15) . " days"));
-            $data[] = [
-                'key' => "deadline_$stage",
-                'value' => $deadlineDate,
-                'created_at' => date('Y-m-d H:i:s')
-            ];
-        }
-
         // Insert batch data ke dalam tabel settings
         $this->db->table('settings')->insertBatch($data);
     }

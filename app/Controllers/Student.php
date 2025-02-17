@@ -40,15 +40,22 @@ class Student extends Controller
 
    public function index()
    {
-      $settingsModel = new \App\Models\SettingsModel();
+      $stageModel = new \App\Models\StageModel();
 
       $studentId = $this->session->get('user_id');
 
       // Get student data
       $studentData = $this->studentModel->getStudentDetails($studentId);
       $currentStage = $this->progressModel->getStudentStage($studentId);
-      $deadlineSidang = strtotime($settingsModel->getSetting('deadline_SIDANG', '2025-06-01'));
-      $remainingDays = ($deadlineSidang - time()) / 86400;
+
+
+      $stages = $stageModel->findAll(); // Ambil semua data stages
+      $deadlines = [];
+      foreach ($stages as $stage) {
+         $deadlines[$stage['name']] = $stage['deadline_at']; // Simpan deadline_at dengan key nama stage
+      }
+      $deadlineSidang = strtotime($deadlines['SIDANG']); // Ambil deadline sidang dari stages
+      $remainingDays = round(($deadlineSidang - time()) / 86400);
 
       // Get announcements
       $announcements = $this->announcementModel->orderBy('created_at', 'DESC')->findAll();
@@ -67,6 +74,44 @@ class Student extends Controller
       ];
 
       return view('student/dashboard', $data);
+   }
+
+   public function registration()
+   {
+      // Ambil data mahasiswa yang sedang login
+      $studentId = session()->get('user_id');
+
+      if (!$studentId) {
+         return redirect()->to('/auth/login')->with('error', 'Silakan login terlebih dahulu.');
+      }
+
+      // Ambil data mahasiswa dari database
+      $student = $this->personModel
+         ->select('persons.*, users.verified_at, majors.name AS major_name, semesters.name AS semester_name')
+         ->join('users', 'users.person_id = persons.id', 'left')
+         ->join('majors', 'majors.id = persons.major_id', 'left')
+         ->join('semesters', 'semesters.id = persons.semester_id', 'left')
+         ->where('persons.id', $studentId)
+         ->first();
+
+      if (!$student) {
+         return redirect()->to('/auth/login')->with('error', 'Data mahasiswa tidak ditemukan.');
+      }
+
+      // Tentukan status mahasiswa berdasarkan verified_at
+      $student['student_status'] = ($student['verified_at'] !== null) ? 'ACTIVE' : 'INACTIVE';
+
+      // Ambil pengumuman untuk mahasiswa
+      $announcements = $this->announcementModel
+         ->orderBy('created_at', 'DESC')
+         ->findAll();
+
+      // Kirim data ke view
+      return view('student/registration', [
+         'pageTitle'     => 'Pendaftaran Mahasiswa',
+         'student'       => $student,
+         'announcements' => $announcements
+      ]);
    }
 
    public function mentoringRegistration()

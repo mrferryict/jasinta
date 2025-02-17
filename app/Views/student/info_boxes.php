@@ -20,7 +20,7 @@
          </span>
          <div class="info-box-content">
             <span class="info-box-text"><?= lang('App.remainingDaysLeft') ?></span>
-            <span class="info-box-number"><?= $infoBoxes['remainingDaysLeft'] ?></span>
+            <span class="info-box-number"><?= $infoBoxes['remainingDaysLeft'] . ' ' . lang('App.days') ?></span>
          </div>
       </div>
    </div>

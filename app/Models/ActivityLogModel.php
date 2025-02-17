@@ -37,4 +37,13 @@ class ActivityLogModel extends Model
    {
       return $this->where('actor_id', $userId)->orderBy('created_at', 'DESC')->findAll();
    }
+   public function getAllLogs()
+   {
+      return
+         $this->select('logs.*')
+         ->join('users', 'users.id = logs.actor_id', 'left')
+         ->join('persons', 'persons.id = users.person_id', 'left')
+         ->orderBy('logs.created_at', 'DESC')
+         ->findAll();
+   }
 }

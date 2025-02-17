@@ -16,7 +16,6 @@ class UserModel extends Model
       'token',
       'token_expired_at',
       'verified_at',
-      'approved_at',
       'created_at',
       'updated_at'
    ];

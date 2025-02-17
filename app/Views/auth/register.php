@@ -41,60 +41,61 @@
 
                   <!-- Tampilkan notifikasi pesan sukses atau error -->
                   <?php if (session()->getFlashdata('error')): ?>
-                     <div class="alert alert-danger"> <?= session()->getFlashdata('error'); ?> </div>
+                     <?php if (session()->getFlashdata('error')) : ?>
+                        <div class="alert alert-danger">
+                           <?= esc(implode('<br>', (array) session()->getFlashdata('error'))); ?>
+                        </div>
+                     <?php endif; ?>
+
                   <?php endif; ?>
                   <?php if (session()->getFlashdata('success')): ?>
                      <div class="alert alert-success"> <?= session()->getFlashdata('success'); ?> </div>
                   <?php endif; ?>
 
                   <!-- Form Pendaftaran Mahasiswa Baru -->
-                  <form action="<?= base_url('register') ?>" method="post">
-                     <div class="form-group">
+                  <form action="<?= base_url('auth/register') ?>" method="post">
+                     <div class="form-group form-control-md">
                         <label for="name"><?= lang('App.fullName') ?></label>
-                        <input type="text" name="name" class="form-control" id="name" required>
+                        <input type="text" name="name" class="form-control" id="name" required autofocus>
                      </div>
 
-                     <div class="form-group">
+                     <div class="form-group form-control-md">
                         <label for="email"><?= lang('App.email') ?></label>
                         <input type="email" name="email" class="form-control" id="email" required>
                      </div>
 
-                     <div class="form-group">
-                        <label for="number"><?= lang('App.nim') ?></label>
-                        <input type="text" name="number" class="form-control" id="number" required>
+                     <div class="form-group form-control-md">
+                        <label for="nim"><?= lang('App.nim') ?></label>
+                        <input type="text" name="nim" class="form-control" id="nim" required>
                      </div>
 
-                     <div class="form-group">
-                        <label for="major_id"><?= lang('App.programStudy') ?></label>
-                        <select name="major_id" class="form-control">
-                           <option value="1">S1 Teknik Informatika</option>
-                           <option value="2">S1 Sistem Informasi</option>
-                           <option value="3">D3 Manajemen Informatika</option>
+                     <div class="form-group field--not-empty">
+                        <label for="is_repeating"><?= lang('App.registrationType') ?></label>
+                        <select name="is_repeating" class="form-control">
+                           <option value="1" <?= set_select('is_repeating', '0', true) ?>><?= lang('App.newRegistration') ?></option>
+                           <option value="0" <?= set_select('is_repeating', '1') ?>><?= lang('App.repeatRegistration') ?></option>
                         </select>
                      </div>
 
-                     <div class="form-group">
-                        <label for="semester_id"><?= lang('App.semesterStart') ?></label>
-                        <select name="semester_id" class="form-control">
-                           <option value="1">Ganjil 2024</option>
-                           <option value="2">Genap 2024</option>
-                        </select>
-                     </div>
-
-                     <div class="form-group">
+                     <div class="form-group form-control-md">
                         <label for="password"><?= lang('App.password') ?></label>
                         <input type="password" name="password" class="form-control" id="password" required>
                      </div>
 
-                     <div class="form-group">
+                     <div class="form-group form-control-md">
                         <label for="confirm_password"><?= lang('App.confirmPassword') ?></label>
                         <input type="password" name="confirm_password" class="form-control" id="confirm_password" required>
+                     </div>
+                     <div class="form-group mb-3 last form-control-md">
+                        <img src="<?= esc($captcha['image_url']) ?>" alt="CAPTCHA Image" class="mb-3">
+                        <label class="mt-2"><?= lang('App.enterCaptcha'); ?></label>
+                        <input type="text" name="captcha" class="form-control" required>
                      </div>
 
                      <input type="submit" value="<?= lang('App.registerNow') ?>" class="btn btn-block btn-primary">
                   </form>
                   <div>
-                     <p class="mt-2 text-center"><a href="<?= base_url('login') ?>"><?= lang('App.backToLogin') ?></a></p>
+                     <p class="mt-2 text-center"><a href="<?= base_url('auth/login') ?>"><?= lang('App.backToLogin') ?></a></p>
                   </div>
                </div>
             </div>

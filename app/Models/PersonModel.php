@@ -15,7 +15,8 @@ class PersonModel extends Model
       'major_id',
       'division',
       'semester_id',
-      'created_at'
+      'created_at',
+      'deleted_at'
    ];
    protected $useTimestamps = true;
    protected $createdField = 'created_at';

@@ -45,13 +45,19 @@
                   <?php endif; ?>
 
                   <form action="<?= base_url('auth/login') ?>" method="post">
-                     <div class="form-group first">
+                     <div class="form-group form-control-md first">
                         <label for="email"><?= lang('App.email') ?></label>
-                        <input type="email" name="email" class="form-control" id="email" required>
+                        <input type="email" name="email" class="form-control" id="email" required autofocus>
                      </div>
-                     <div class="form-group last mb-3">
+                     <div class="form-group form-control-md mb-3">
                         <label for="password"><?= lang('App.password') ?></label>
                         <input type="password" name="password" class="form-control" id="password" required>
+                     </div>
+                     <div class="form-group form-control-md last mb-3">
+
+                        <img src="<?= esc($captcha['image_url']) ?>" alt="CAPTCHA Image" class="mb-3"><br>
+                        <label class="mt-2"><?= lang('App.enterCaptcha'); ?></label>
+                        <input type="text" name="captcha" class="form-control" required>
                      </div>
                      <div class="d-flex mb-5 align-items-center">
                         <span><a href="<?= base_url('auth/forgot-password') ?>"><?= lang('App.forgotPassword') ?></a></span>

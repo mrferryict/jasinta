@@ -36,21 +36,24 @@ class Admin extends Controller
    {
       $progressModel = new \App\Models\ProgressModel();
       $stageModel = new \App\Models\StageModel();
-      $settingsModel = new \App\Models\SettingsModel();
 
       // **1. TOTAL MAHASISWA PESERTA**
       $totalStudents = $progressModel->countAll();
 
-      // **2. AMBIL DEADLINE TIAP TAHAPAN**
-      $deadlines = array_column($settingsModel->getAllDeadlines(), 'value', 'key');
+      // **2. AMBIL DEADLINE TIAP TAHAPAN DARI TABEL STAGES**
+      $stages = $stageModel->findAll(); // Ambil semua data stages
+      $deadlines = [];
+      foreach ($stages as $stage) {
+         $deadlines[$stage['name']] = $stage['deadline_at']; // Simpan deadline_at dengan key nama stage
+      }
 
       // **3. AMBIL DATA MAHASISWA & HITUNG MAHASISWA ON-TRACK**
       $students = $progressModel->getStudentProgress();
       $studentsOnTrack = 0;
 
       foreach ($students as $student) {
-         $stageKey = 'deadline_' . strtoupper($student['stage']);
-         $deadlineDate = isset($deadlines[$stageKey]) ? strtotime($deadlines[$stageKey]) : null;
+         $stageName = strtoupper($student['stage']); // Nama stage dalam format uppercase
+         $deadlineDate = isset($deadlines[$stageName]) ? strtotime($deadlines[$stageName]) : null; // Ambil deadline dari array deadlines
          $stageDate = strtotime($student['stage_date'] ?? date('Y-m-d'));
 
          // Jika mahasiswa tidak melewati deadline, berarti on-track
@@ -60,9 +63,8 @@ class Admin extends Controller
       }
 
       // **4. WAKTU TERSISA SEBELUM DEADLINE SIDANG**
-      $deadlineSidang = strtotime($settingsModel->getSetting('deadline_SIDANG', '2025-06-01'));
-      $remainingDays = ($deadlineSidang - time()) / 86400;
-      $remainingDays = max(0, round($remainingDays)); // Pastikan tidak negatif
+      $deadlineSidang = strtotime($deadlines['SIDANG']); // Ambil deadline sidang dari stages
+      $remainingDays = round(($deadlineSidang - time()) / 86400);
 
       $data = [
          'settings' => $this->settings,
@@ -75,7 +77,7 @@ class Admin extends Controller
          'pageTitle' => 'DASHBOARD',
          'tableTitle' => lang('App.monitoringTheStagesOfStudents'),
          'students' => $progressModel->getStudentProgress(),
-         'deadlines' => array_column($progressModel->getStageDeadlines(), 'value', 'key'),
+         'deadlines' => $deadlines, // Menggunakan deadlines dari stages
          'stages' => array_column($stageModel->orderBy('id', 'ASC')->findAll(), 'name'),
       ];
       return view('admin/dashboard', $data);
@@ -233,9 +235,14 @@ class Admin extends Controller
 
 
    // ===================== AKTIVITAS PENGGUNA (AUDIT TRAILS) =====================
-   public function aktivitasPengguna()
+   public function activityLogs()
    {
-      $data['logs'] = $this->activityLogModel->orderBy('created_at', 'DESC')->findAll();
-      return view('admin/aktivitas_pengguna', $data);
+      $activityLogModel = new ActivityLogModel();
+      $data = [
+         'pageTitle' => 'Activity Logs',
+         'logs' => $activityLogModel->getAllLogs(),
+      ];
+
+      return view('admin/activity_logs', $data);
    }
 }

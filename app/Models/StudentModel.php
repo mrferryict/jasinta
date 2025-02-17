@@ -60,7 +60,15 @@ class StudentModel extends Model
     */
    public function getStudentDetails($studentId)
    {
-      return $this->select('persons.*, users.status AS user_status, stages.name AS stage_name, thesis.title AS thesis_title')
+      return $this->select('
+            persons.*,
+            stages.name AS stage_name,
+            thesis.title AS thesis_title,
+            (CASE
+                WHEN users.verified_at IS NULL THEN "INACTIVE"
+                ELSE "ACTIVE"
+            END) AS student_status
+        ')
          ->join('users', 'users.person_id = persons.id', 'left')
          ->join('thesis', 'thesis.student_id = persons.id', 'left')
          ->join('progress', 'progress.thesis_id = thesis.id', 'left')
@@ -68,6 +76,7 @@ class StudentModel extends Model
          ->where('persons.id', $studentId)
          ->first();
    }
+
 
    /**
     * Get all students with their progress stage

@@ -33,6 +33,21 @@ class MajorModel extends Model
    }
 
    /**
+    * Get major ID by name.
+    *
+    * @param string $name Nama major yang dicari.
+    * @return int|null ID major atau null jika tidak ditemukan.
+    */
+   public function getMajorIdByName($name)
+   {
+      $result = $this->select('id')
+         ->where('LOWER(name)', strtolower($name)) // Case-insensitive comparison
+         ->first();
+
+      return $result ? $result['id'] : null;
+   }
+
+   /**
     * Check if a person is a coordinator for any major.
     */
    public function isCoordinator($personId)
