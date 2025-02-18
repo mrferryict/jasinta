@@ -6,13 +6,23 @@ use CodeIgniter\Model;
 
 class StudentModel extends Model
 {
-   protected $table = 'persons';
+   protected $table = 'users';
    protected $primaryKey = 'id';
-   protected $allowedFields = ['name', 'email', 'number', 'major_id', 'division', 'semester_id', 'created_at', 'updated_at', 'deleted_at'];
-
+   protected $allowedFields = [
+      'name',
+      'email',
+      'number',
+      'major_id',
+      'division',
+      'semester_id',
+      'is_repeating',
+      'verified_at',
+      'created_at',
+      'updated_at',
+   ];
    protected $useTimestamps = true;
-   protected $useSoftDeletes = true;
-
+   protected $createdField = 'created_at';
+   protected $updatedField = 'updated_at';
 
    /**
     * Get student information by user ID
@@ -20,26 +30,24 @@ class StudentModel extends Model
    public function getStudentByUserId($userId)
    {
       return $this->where('id', $userId)
-         ->where('division', 'MAHASISWA')
+         ->where('division', 'STUDENT')
          ->first();
    }
 
    /**
     * Get the current stage of a student
-    * @param int $studentId
-    * @return string|null
     */
    public function getStudentStage($studentId)
    {
       $result = $this->select('stages.name')
-         ->join('users', 'users.person_id = persons.id', 'left')
+         ->join('thesis', 'thesis.student_id = users.id', 'left')
          ->join('progress', 'progress.thesis_id = thesis.id', 'left')
          ->join('stages', 'stages.id = progress.stage_id', 'left')
-         ->join('thesis', 'thesis.student_id = persons.id', 'left')
-         ->where('persons.id', $studentId)
+         ->where('users.id', $studentId)
+         ->orderBy('progress.created_at', 'DESC')
          ->first();
 
-      return $result ? $result['name'] : 'PENDAFTARAN'; // Default stage if none found
+      return $result ? $result['name'] : 'PENDAFTARAN'; // Default jika tidak ada data
    }
 
    /**
@@ -52,16 +60,13 @@ class StudentModel extends Model
          ->findAll();
    }
 
-
    /**
-    * Get details of a student including their stage progress
-    * @param int $studentId
-    * @return array|null
+    * Get student details including their progress stage
     */
    public function getStudentDetails($studentId)
    {
       return $this->select('
-            persons.*,
+            users.*,
             stages.name AS stage_name,
             thesis.title AS thesis_title,
             (CASE
@@ -69,62 +74,39 @@ class StudentModel extends Model
                 ELSE "ACTIVE"
             END) AS student_status
         ')
-         ->join('users', 'users.person_id = persons.id', 'left')
-         ->join('thesis', 'thesis.student_id = persons.id', 'left')
+         ->join('thesis', 'thesis.student_id = users.id', 'left')
          ->join('progress', 'progress.thesis_id = thesis.id', 'left')
          ->join('stages', 'stages.id = progress.stage_id', 'left')
-         ->where('persons.id', $studentId)
+         ->where('users.id', $studentId)
          ->first();
    }
 
-
    /**
     * Get all students with their progress stage
-    * @return array
     */
    public function getAllStudents()
    {
-      return $this->select('persons.*, stages.name AS stage_name, thesis.title AS thesis_title')
-         ->join('users', 'users.person_id = persons.id', 'left')
+      return $this->select('users.*, stages.name AS stage_name, thesis.title AS thesis_title')
+         ->join('thesis', 'thesis.student_id = users.id', 'left')
          ->join('progress', 'progress.thesis_id = thesis.id', 'left')
          ->join('stages', 'stages.id = progress.stage_id', 'left')
-         ->join('thesis', 'thesis.student_id = persons.id', 'left')
-         ->where('persons.division', 'STUDENT')
-         ->findAll();
-   }
-
-
-
-   /**
-    * Get all students who are currently active in the system
-    * @return array
-    */
-   public function getActiveStudents()
-   {
-      return $this->select('persons.*, stages.name AS stage_name')
-         ->join('users', 'users.person_id = persons.id', 'left')
-         ->join('progress', 'progress.thesis_id = thesis.id', 'left')
-         ->join('stages', 'stages.id = progress.stage_id', 'left')
-         ->join('thesis', 'thesis.student_id = persons.id', 'left')
-         ->where('users.status', 'ACTIVE')
+         ->where('users.division', 'STUDENT')
          ->findAll();
    }
 
    /**
     * Count total active students
-    * @return int
     */
    public function countActiveStudents()
    {
-      return $this->join('users', 'users.person_id = persons.id', 'left')
-         ->where('users.status', 'ACTIVE')
+      return $this->where('division', 'STUDENT')
+         ->where('verified_at IS NOT NULL')
+         ->where('deleted_at IS NULL')
          ->countAllResults();
    }
 
    /**
     * Get students who are on track based on deadlines
-    * @param array $deadlines
-    * @return int
     */
    public function countStudentsOnTrack($deadlines)
    {
@@ -144,20 +126,14 @@ class StudentModel extends Model
       return $onTrackCount;
    }
 
-
    /**
     * Check student's registration status (Pending / Approved)
     */
    public function getStudentRegistrationStatus($studentId)
    {
-      return $this->db->table('users')
-         ->select('users.status')
-         ->join('persons', 'persons.id = users.person_id')
-         ->where('persons.id', $studentId)
-         ->orderBy('users.id', 'DESC')
-         ->limit(1)
-         ->get()
-         ->getRowArray();
+      return $this->select('verified_at')
+         ->where('id', $studentId)
+         ->first();
    }
 
    /**
@@ -208,8 +184,8 @@ class StudentModel extends Model
    public function getStudentSupervisors($studentId)
    {
       return $this->db->table('appointment_details')
-         ->select('persons.id, persons.name, appointment_details.task_type')
-         ->join('persons', 'appointment_details.person_id = persons.id')
+         ->select('users.id, users.name, appointment_details.task_type')
+         ->join('users', 'appointment_details.user_id = users.id')
          ->join('appointments', 'appointment_details.appointment_id = appointments.id')
          ->join('thesis', 'appointments.thesis_id = thesis.id')
          ->where('thesis.student_id', $studentId)
@@ -223,8 +199,8 @@ class StudentModel extends Model
    public function getStudentScores($studentId)
    {
       return $this->db->table('scores')
-         ->select('scores.score, scores.comments, persons.name as evaluator')
-         ->join('persons', 'scores.evaluator_id = persons.id')
+         ->select('scores.score, scores.comments, users.name as evaluator')
+         ->join('users', 'scores.evaluator_id = users.id')
          ->join('thesis', 'scores.thesis_id = thesis.id')
          ->where('thesis.student_id', $studentId)
          ->get()

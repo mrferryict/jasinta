@@ -148,11 +148,11 @@
                   </a>
                   <ul class="dropdown-menu dropdown-menu-lg dropdown-menu-end">
                      <li class="user-body">
-                        <div class="dropdown-divider"></div>
-                        <a href="#" class="dropdown-item">
+
+                        <!-- <a href="#" class="dropdown-item">
                            <i class="bi bi-person-badge me-2"></i> <?= langUppercase('App.profile') ?>
-                        </a>
-                        <div class="dropdown-divider"></div>
+                        </a> -->
+                        <!-- <div class="dropdown-divider"></div> -->
                         <a href="<?= base_url('auth/logout') ?>" class="dropdown-item">
                            <i class="bi bi-box-arrow-right me-2"></i> <?= langUppercase('App.signOut') ?>
                         </a>

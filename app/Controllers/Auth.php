@@ -3,23 +3,21 @@
 namespace App\Controllers;
 
 use App\Models\UserModel;
-use App\Models\PersonModel;
 use App\Models\TemporaryUserModel;
 use App\Models\MajorModel;
-
+use App\Models\SemesterModel;
+use App\Models\AppointmentModel;
 use CodeIgniter\Controller;
 use CodeIgniter\I18n\Time;
 
 class Auth extends Controller
 {
    protected $userModel;
-   protected $personModel;
    protected $session;
 
    public function __construct()
    {
       $this->userModel = new UserModel();
-      $this->personModel = new PersonModel();
       $this->session = session();
    }
 
@@ -27,11 +25,11 @@ class Auth extends Controller
    {
       if (session()->has('isLoggedIn')) {
          // Cek peran pengguna dan arahkan sesuai
-         if (in_array('ADMINISTRATOR', session()->get('roles'))) {
+         if ('ADMIN' == session()->get('division')) {
             return redirect()->to('admin');
-         } elseif (in_array('LECTURER', session()->get('roles'))) {
+         } elseif ('LECTURER' == session()->get('division')) {
             return redirect()->to('lecturer');
-         } elseif (in_array('STUDENT', session()->get('roles'))) {
+         } elseif ('STUDENT' == session()->get('division')) {
             return redirect()->to('student');
          }
       }
@@ -95,63 +93,50 @@ class Auth extends Controller
          return redirect()->back()->withInput()->with('error', lang('App.captchaMismatched'));
       }
 
-      // Join users dengan persons untuk mendapatkan informasi lengkap
-      $user = $this->userModel
-         ->select('users.*, persons.name, persons.division')
-         ->join('persons', 'persons.id = users.person_id')
-         ->where('persons.email', $email)
+      // Cek apakah email terdaftar atas user tertentu
+      $currentUser = $this->userModel
+         ->select('*')
+         ->where('email', $email)
          ->first();
 
-      if (!$user || !password_verify($password, $user['password'])) {
+      if (!$currentUser || !password_verify($password, $currentUser['password'])) {
          return redirect()->back()->with('error', 'Email atau password salah!');
       }
 
-      if (!$user['verified_at']) {
+      if (!$currentUser['verified_at']) {
          return redirect()->back()->with('error', 'Akun belum aktif atau masih dalam status pending.');
       }
 
-      // Ambil semua role user dari tabel user_roles
-      $roles = $this->userModel
-         ->select('roles.name')
-         ->join('user_roles', 'user_roles.user_id = users.id')
-         ->join('roles', 'roles.id = user_roles.role_id')
-         ->where('users.id', $user['id'])
-         ->findAll();
-
-      // Konversi hasil roles menjadi array
-      $userRoles = array_column($roles, 'name');
-
-      // Jika user adalah dosen, cek apakah dia punya SK aktif
-      if (in_array('LECTURER', $userRoles)) {
+      // Jika currentUser adalah LECTURER, cek apakah dia punya SK aktif
+      if ($currentUser['division'] == 'LECTURER') {
          $appointmentModel = new \App\Models\AppointmentModel();
-         $activeAppointments = $appointmentModel->getActiveAppointments($user['id']);
+         $activeAppointments = $appointmentModel->getActiveAppointments($currentUser['id']);
 
          $this->session->set(['appointments' => $activeAppointments]);
       }
 
-      // Jika user adalah mahasiswa, cek tahapan terakhirnya
-      if (in_array('STUDENT', $userRoles)) {
+      // Jika current$currentUser adalah STUDENT, cek tahapan terakhirnya
+      if ($currentUser['division'] == 'STUDENT') {
          $progressModel = new \App\Models\ProgressModel();
-         $studentStage = $progressModel->getStudentStage($user['id']);
+         $studentStage = $progressModel->getStudentStage($currentUser['id']);
 
          $this->session->set(['student_stage' => $studentStage['name'] ?? 'PENDAFTARAN']);
       }
 
       // Simpan data dalam session
       $this->session->set([
-         'user_id'   => $user['id'],
-         'name'      => $user['name'],
-         'division'  => $user['division'],
-         'roles'     => $userRoles, // Bisa memiliki lebih dari satu role
+         'user_id'   => $currentUser['id'],
+         'name'      => $currentUser['name'],
+         'division'  => $currentUser['division'],
          'isLoggedIn' => true
       ]);
 
       // **Redirect sesuai role utama**
-      if (in_array('ADMIN', $userRoles)) {
+      if ($currentUser['division'] == 'ADMIN') {
          return redirect()->to('admin');
-      } elseif (in_array('LECTURER', $userRoles)) {
+      } elseif ($currentUser['division'] == 'LECTURER') {
          return redirect()->to('lecturer');
-      } elseif (in_array('STUDENT', $userRoles)) {
+      } elseif ($currentUser['division'] == 'STUDENT') {
          return redirect()->to('student');
       }
 
@@ -232,9 +217,6 @@ class Auth extends Controller
          return redirect()->back()->withInput()->with('error', $validation->getErrors());
       }
 
-      $temporaryUserModel = new TemporaryUserModel();
-      $personModel = new PersonModel();
-
       $email         = $this->request->getPost('email');
       $nim           = $this->request->getPost('nim');
       $is_repeating  = (int)$this->request->getPost('is_repeating');
@@ -245,10 +227,12 @@ class Auth extends Controller
       }
 
       // 2. Cek apakah email sudah ada di database
-      $emailExistsInTemporaryUsers = $temporaryUserModel->where('email', $email)->first();
-      $emailExistsInPersons = $personModel->where('email', $email)->first();
+      $tum = new TemporaryUserModel();
+      $um = new UserModel();
+      $emailExistsInTemporaryUsers = $tum->where('email', $email)->first();
+      $emailExistsInUsers = $um->where('email', $email)->first();
 
-      if ($emailExistsInTemporaryUsers || $emailExistsInPersons) {
+      if ($emailExistsInTemporaryUsers || $emailExistsInUsers) {
          return redirect()->back()->withInput()->with('error', lang('App.emailAlreadyExist'));
       }
 
@@ -266,8 +250,7 @@ class Auth extends Controller
       }
 
       // 4. Cek apakah NIM sudah ada di database
-      $nimExists = $temporaryUserModel->where('nim', $nim)->first() ||
-         $personModel->where('number', $nim)->first();
+      $nimExists = $tum->where('nim', $nim)->first() || $um->where('number', $nim)->first();
 
       if ($nimExists) {
          return redirect()->back()->withInput()->with('error', lang('App.nimAlreadyExist'));
@@ -286,10 +269,10 @@ class Auth extends Controller
          'created_at' => Time::now()->format('Y-m-d H:i:s'),
          'expired_at' => Time::now()->addDays(1)->format('Y-m-d H:i:s')
       ];
-      $temporaryUserModel->insert($newTempUser);
+      $tum->insert($newTempUser);
 
       // Mahasiswa Langsung Terverifikasi (langsung simpan ke person dan user)
-      $dataPersonUser = [
+      $dataNewUser = [
          'name'         => $this->request->getPost('name'),
          'email'        => $email,
          'nim'          => $nim,
@@ -298,7 +281,7 @@ class Auth extends Controller
          'ip_address'   => getUserIpAddress(),
          'is_repeating' => $is_repeating
       ];
-      $this->activateUserImmediately($dataPersonUser);
+      $this->activateUserImmediately($dataNewUser);
       $pesan = lang('App.registrationSucceed') . '. ' . lang('App.waitingAdminApproval');
       return redirect()->to('/auth/login')->with('success', $pesan);
    }
@@ -308,40 +291,22 @@ class Auth extends Controller
     */
    private function activateUserImmediately($data)
    {
-      $personModel = new PersonModel();
+      $um = new UserModel();
+      $sm = new SemesterModel();
 
-      // Masukkan ke tabel persons sebagai STUDENT
-      $newInsertID = $personModel->insert([
-         'name'       => $data['name'],
-         'email'      => $data['email'],
-         'number'     => $data['nim'],
-         'role'       => 'STUDENT',
-         'major_id'   => $data['major_id'],
-         'semester'   => $this->getActiveSemester(),
-         'is_repeating' => $data['is_repeating']
-      ]);
-
-      $userModel = new UserModel();
-
-      // Masukan ke tabel user dengan status menunggu persetujuan ADMIN
-      $userModel->insert([
-         'person_id'  => $newInsertID,
-         'password'   => $data['password'],
-         'number'     => $data['nim'],
-         'role'       => 'STUDENT',
-         'major_id'   => $data['major_id'],
-         'semester'   => $this->getActiveSemester(),
+      // Masukkan ke tabel users sebagai STUDENT
+      $newInsertID = $um->insert([
+         'name'         => $data['name'],
+         'email'        => $data['email'],
+         'password'     => $data['password'],
+         'number'       => $data['nim'],
+         'division'     => 'STUDENT',
+         'major_id'     => $data['major_id'],
+         'semester'     => $sm->getActiveSemester(),
          'is_repeating' => $data['is_repeating'],
-         'verified_at' => date('Y-m-d H:i:s'),  // seolah langsung disetujui oleh ADMIN
+         'verified_at'  => date('Y-m-d H:i:s'),  // seolah langsung diverifikasi oleh ADMIN
       ]);
    }
-
-   private function getActiveSemester()
-   {
-      $db = \Config\Database::connect();
-      return $db->table('semesters')->where('is_active', 1)->get()->getRow()->id;
-   }
-
 
    public function forgotPassword()
    {

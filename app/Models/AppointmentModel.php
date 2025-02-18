@@ -6,121 +6,71 @@ use CodeIgniter\Model;
 
 class AppointmentModel extends Model
 {
-   protected $table = 'appointments';
-   protected $primaryKey = 'id';
-   protected $allowedFields = ['number', 'stage_id', 'thesis_id', 'created_at', 'updated_at', 'deleted_at'];
-   protected $useTimestamps = true;
-   protected $useSoftDeletes = true;
+   protected $table            = 'appointments';
+   protected $primaryKey       = 'id';
+   protected $allowedFields    = ['number', 'stage_id', 'thesis_id', 'created_at', 'updated_at', 'deleted_at'];
+   protected $useTimestamps    = true;
+   protected $createdField     = 'created_at';
+   protected $updatedField     = 'updated_at';
 
    /**
-    * Get active appointments for a lecturer.
-    *
-    * @param int $lecturerId
-    * @return array
+    * Ambil semua penugasan
     */
-   public function getActiveAppointments($lecturerId)
+   public function getAppointments()
    {
       return $this->db->table('appointments')
-         ->select('appointments.id, appointments.number, appointments.stage_id, appointments.thesis_id, thesis.title, appointment_details.task_type')
-         ->join('appointment_details', 'appointment_details.appointment_id = appointments.id', 'inner')
-         ->join('thesis', 'thesis.id = appointments.thesis_id', 'inner')
-         ->where('appointment_details.person_id', $lecturerId)
-         ->where('appointments.deleted_at IS NULL')
+         ->select('appointments.*, users.name as lecturer_name')
+         ->join('users', 'users.id = appointments.lecturer_id', 'left')
+         ->orderBy('appointments.created_at', 'DESC')
          ->get()
          ->getResultArray();
    }
 
+
    /**
-    * Get appointment details by appointment ID.
-    *
-    * @param int $appointmentId
-    * @return array
+    * Ambil semua penugasan berdasarkan mahasiswa
     */
-   public function getAppointmentDetails($appointmentId)
+   public function getAppointmentsByStudent($studentId)
    {
-      return $this->db->table('appointment_details')
-         ->select('appointment_details.id, appointment_details.task_type, persons.name, persons.email, persons.number')
-         ->join('persons', 'persons.id = appointment_details.person_id', 'inner')
-         ->where('appointment_details.appointment_id', $appointmentId)
-         ->where('appointment_details.deleted_at IS NULL')
-         ->get()
-         ->getResultArray();
+      return $this->select('appointments.*, stages.name as stage_name, thesis.title as thesis_title')
+         ->join('stages', 'stages.id = appointments.stage_id', 'left')
+         ->join('thesis', 'thesis.id = appointments.thesis_id', 'left')
+         ->where('thesis.student_id', $studentId)
+         ->orderBy('appointments.created_at', 'DESC')
+         ->findAll();
    }
 
    /**
-    * Assign a lecturer to an appointment.
-    *
-    * @param int $appointmentId
-    * @param int $lecturerId
-    * @param string $taskType
-    * @return bool
+    * Tambahkan penugasan baru
     */
-   public function assignLecturer($appointmentId, $lecturerId, $taskType)
+   public function addAppointment($number, $stageId, $thesisId)
    {
-      return $this->db->table('appointment_details')->insert([
-         'appointment_id' => $appointmentId,
-         'person_id' => $lecturerId,
-         'task_type' => $taskType,
+      return $this->insert([
+         'number'     => $number,
+         'stage_id'   => $stageId,
+         'thesis_id'  => $thesisId,
          'created_at' => date('Y-m-d H:i:s')
       ]);
    }
 
    /**
-    * Get thesis appointments by student ID.
-    *
-    * @param int $studentId
-    * @return array
+    * Hapus penugasan berdasarkan ID
     */
-   public function getStudentAppointments($studentId)
+   public function deleteAppointment($appointmentId)
    {
-      return $this->db->table('appointments')
-         ->select('appointments.id, appointments.number, stages.name AS stage_name, thesis.title')
-         ->join('thesis', 'thesis.id = appointments.thesis_id', 'inner')
-         ->join('stages', 'stages.id = appointments.stage_id', 'inner')
-         ->where('thesis.student_id', $studentId)
-         ->where('appointments.deleted_at IS NULL')
-         ->get()
-         ->getResultArray();
+      return $this->delete($appointmentId);
    }
 
    /**
-    * Get students supervised or examined by a lecturer.
-    *
-    * @param int $lecturerId
-    * @return array
+    * Ambil detail penugasan berdasarkan ID
     */
-   public function getSupervisedStudents($lecturerId)
+   public function getAppointmentById($appointmentId)
    {
-      return $this->db->table('appointment_details')
-         ->select('persons.id AS student_id, persons.name AS student_name, persons.number AS student_nim, thesis.title AS thesis_title, appointment_details.task_type')
-         ->join('appointments', 'appointments.id = appointment_details.appointment_id', 'inner')
-         ->join('thesis', 'thesis.id = appointments.thesis_id', 'inner')
-         ->join('persons', 'persons.id = thesis.student_id', 'inner')
-         ->where('appointment_details.person_id', $lecturerId)
-         ->where('appointments.deleted_at IS NULL')
-         ->where('appointment_details.deleted_at IS NULL')
-         ->get()
-         ->getResultArray();
-   }
-
-   /**
-    * Get students examined by a lecturer (Dosen Penguji).
-    *
-    * @param int $lecturerId
-    * @return array
-    */
-   public function getExaminedStudents($lecturerId)
-   {
-      return $this->db->table('appointment_details')
-         ->select('persons.id AS student_id, persons.name AS student_name, persons.number AS student_nim, thesis.title AS thesis_title, appointment_details.task_type')
-         ->join('appointments', 'appointments.id = appointment_details.appointment_id', 'inner')
-         ->join('thesis', 'thesis.id = appointments.thesis_id', 'inner')
-         ->join('persons', 'persons.id = thesis.student_id', 'inner')
-         ->where('appointment_details.person_id', $lecturerId)
-         ->where('appointment_details.task_type', 'dosen penguji') // Hanya mengambil peran sebagai dosen penguji
-         ->where('appointments.deleted_at IS NULL')
-         ->where('appointment_details.deleted_at IS NULL')
-         ->get()
-         ->getResultArray();
+      return $this->select('appointments.*, stages.name as stage_name, thesis.title as thesis_title, users.name as student_name')
+         ->join('stages', 'stages.id = appointments.stage_id', 'left')
+         ->join('thesis', 'thesis.id = appointments.thesis_id', 'left')
+         ->join('users', 'users.id = thesis.student_id', 'left')
+         ->where('appointments.id', $appointmentId)
+         ->first();
    }
 }

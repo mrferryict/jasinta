@@ -24,7 +24,6 @@ class ProgressSeeder extends Seeder
             'description' => 'Progress untuk tahap ' . $stages[$stage - 1],
             'created_at'  => date('Y-m-d H:i:s'),
             'updated_at'  => null,
-            'deleted_at'  => null,
          ];
       }
 

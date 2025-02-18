@@ -8,20 +8,46 @@ class SettingsModel extends Model
 {
     protected $table = 'settings';
     protected $primaryKey = 'id';
-    protected $allowedFields = ['key', 'value'];
+    protected $allowedFields = ['key', 'value', 'created_at', 'updated_at'];
+    protected $useTimestamps = true;
+    protected $createdField = 'created_at';
+    protected $updatedField = 'updated_at';
 
-    public function getSetting($key)
-    {
-        return $this->where('key', $key)->first()['value'] ?? null;
-    }
-
+    /**
+     * Ambil semua pengaturan dalam sistem
+     */
     public function getAllSettings()
     {
-        return $this->findAll();
+        return $this->orderBy('key', 'ASC')->findAll();
     }
 
-    public function getAllDeadlines()
+    /**
+     * Ambil pengaturan berdasarkan key
+     */
+    public function getSetting($key)
     {
-        return $this->where('key LIKE', 'deadline_%')->findAll();
+        return $this->where('key', $key)->first();
+    }
+
+    /**
+     * Perbarui pengaturan berdasarkan key
+     */
+    public function updateSetting($key, $value)
+    {
+        $setting = $this->where('key', $key)->first();
+
+        if ($setting) {
+            return $this->update($setting['id'], ['value' => $value]);
+        } else {
+            return $this->insert(['key' => $key, 'value' => $value, 'created_at' => date('Y-m-d H:i:s')]);
+        }
+    }
+
+    /**
+     * Hapus pengaturan berdasarkan key
+     */
+    public function deleteSetting($key)
+    {
+        return $this->where('key', $key)->delete();
     }
 }

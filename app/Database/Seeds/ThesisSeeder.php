@@ -31,7 +31,6 @@ class ThesisSeeder extends Seeder
             'student_id'  => $studentId,
             'created_at'  => date('Y-m-d H:i:s'),
             'updated_at'  => null,
-            'deleted_at'  => null,
          ];
       }
 

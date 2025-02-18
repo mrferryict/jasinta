@@ -8,26 +8,24 @@ class MajorModel extends Model
 {
    protected $table            = 'majors';
    protected $primaryKey       = 'id';
-   protected $allowedFields    = ['name', 'coordinator_id'];
+   protected $allowedFields    = ['name'];
 
    /**
-    * Get all majors with optional coordinator details.
+    * Get all majors ordered by name.
     */
    public function getAllMajors()
    {
-      return $this->select('majors.*, persons.name AS coordinator_name')
-         ->join('persons', 'persons.id = majors.coordinator_id', 'left')
-         ->orderBy('majors.name', 'ASC')
-         ->findAll();
+      return $this->orderBy('majors.name', 'ASC')->findAll();
    }
 
    /**
-    * Get major by ID with coordinator details.
+    * Get major by ID with coordinator details (if available).
     */
    public function getMajorById($id)
    {
-      return $this->select('majors.*, persons.name AS coordinator_name')
-         ->join('persons', 'persons.id = majors.coordinator_id', 'left')
+      return $this->select('majors.*, users.name AS coordinator_name')
+         ->join('coordinators', 'coordinators.major_id = majors.id', 'left')
+         ->join('users', 'users.id = coordinators.user_id', 'left')
          ->where('majors.id', $id)
          ->first();
    }
@@ -45,21 +43,5 @@ class MajorModel extends Model
          ->first();
 
       return $result ? $result['id'] : null;
-   }
-
-   /**
-    * Check if a person is a coordinator for any major.
-    */
-   public function isCoordinator($personId)
-   {
-      return $this->where('coordinator_id', $personId)->countAllResults() > 0;
-   }
-
-   /**
-    * Assign a person as a coordinator for a major.
-    */
-   public function assignCoordinator($majorId, $personId)
-   {
-      return $this->update($majorId, ['coordinator_id' => $personId]);
    }
 }

@@ -19,7 +19,6 @@ $currentStage = $progressModel
 
 $stageIndex = array_search($currentStage, $stages);
 $majorModel = new \App\Models\MajorModel();
-$isKapordi = $majorModel->where('coordinator_id', $userId)->countAllResults() > 0;
 ?>
 
 <aside class="app-sidebar bg-body-secondary shadow" data-bs-theme="dark">
@@ -41,12 +40,12 @@ $isKapordi = $majorModel->where('coordinator_id', $userId)->countAllResults() > 
             <!-- **Menu untuk ADMIN** -->
             <?php if ($division == 'ADMIN'): ?>
                <li class="nav-item">
-                  <a href="<?= base_url('admin/activity_logs') ?>" class="nav-link">
+                  <a href="<?= base_url('admin/activity_logs') ?>" class="nav-link <?= ($activeMenu == 'activityLogs') ? 'active' : '' ?>">
                      <i class="nav-icon bi bi-clock-history"></i>
                      <p><?= langUppercase('App.activityLogs') ?></p>
                   </a>
                </li>
-               <li class="nav-item">
+               <li class="nav-item <?= (in_array($activeMenu, ['users', 'majors', 'settings'])) ? 'menu-open' : '' ?>">
                   <a href="#" class="nav-link">
                      <i class="nav-icon bi bi-speedometer"></i>
                      <p>
@@ -55,15 +54,24 @@ $isKapordi = $majorModel->where('coordinator_id', $userId)->countAllResults() > 
                      </p>
                   </a>
                   <ul class="nav nav-treeview">
-                     <li class="nav-item small"><a href="<?= base_url('admin/people') ?>" class="nav-link"><i class="nav-icon bi bi-person-lines-fill"></i>
-                           <p><?= langUppercase('App.people') ?></p>
-                        </a></li>
-                     <li class="nav-item small"><a href="<?= base_url('admin/majors') ?>" class="nav-link"><i class="nav-icon bi bi-journal-bookmark"></i>
+                     <li class="nav-item small">
+                        <a href="<?= base_url('admin/users') ?>" class="nav-link <?= ($activeMenu == 'users') ? 'active' : '' ?>">
+                           <i class="nav-icon bi bi-person-lines-fill"></i>
+                           <p><?= langUppercase('App.users') ?></p>
+                        </a>
+                     </li>
+                     <li class="nav-item small">
+                        <a href="<?= base_url('admin/majors') ?>" class="nav-link <?= ($activeMenu == 'majors') ? 'active' : '' ?>">
+                           <i class="nav-icon bi bi-journal-bookmark"></i>
                            <p><?= langUppercase('App.majors') ?></p>
-                        </a></li>
-                     <li class="nav-item small"><a href="<?= base_url('admin/settings') ?>" class="nav-link"><i class="nav-icon bi bi-gear"></i>
+                        </a>
+                     </li>
+                     <li class="nav-item small">
+                        <a href="<?= base_url('admin/settings') ?>" class="nav-link<?= ($activeMenu == 'settings') ? 'active' : '' ?>">
+                           <i class="nav-icon bi bi-gear"></i>
                            <p><?= langUppercase('App.settings') ?></p>
-                        </a></li>
+                        </a>
+                     </li>
                   </ul>
                </li>
                <li class="nav-item">

@@ -12,103 +12,35 @@ class UserSeeder extends Seeder
         $db = \Config\Database::connect();
 
         // Contoh Data Persons (Mahasiswa, Dosen, Administrator)
-        $persons = [
-            [
-                'name'       => 'Ferry Hariyanto',
-                'email'      => 'ferry@example.com',
-                'number'     => '23566001', // NIM
-                'major_id'   => 1, // Sesuaikan dengan major yang ada
-                'division'   => 'STUDENT',
-                'semester_id' => 1,
-                'created_at' => date('Y-m-d H:i:s'),
-            ],
-            [
-                'name'       => 'Thomas Budiman, S.Kom, M.TI',
-                'email'      => 'thomas@example.com',
-                'number'     => '0312067703', // NIDN
-                'major_id'   => null,
-                'division'   => 'LECTURER',
-                'semester_id' => null,
-                'created_at' => date('Y-m-d H:i:s'),
-            ],
-            [
-                'name'       => 'Akmal Budi Yulianto, ST, MM',
-                'email'      => 'akmal@example.com',
-                'number'     => '0308078002', // NIDN
-                'major_id'   => null,
-                'division'   => 'LECTURER',
-                'semester_id' => null,
-                'created_at' => date('Y-m-d H:i:s'),
-            ],
-            [
-                'name'       => 'Ir. Ifan Junaedi, M.Kom',
-                'email'      => 'ifan@example.com',
-                'number'     => '0318126401', // NIDN
-                'major_id'   => null,
-                'division'   => 'LECTURER',
-                'semester_id' => null,
-                'created_at' => date('Y-m-d H:i:s'),
-            ],
-            [
-                'name'       => 'Asih',
-                'email'      => 'asih@example.com',
-                'number'     => 'A12345678', // ID Admin
-                'major_id'   => null,
-                'division'   => 'ADMIN',
-                'semester_id' => null,
-                'created_at' => date('Y-m-d H:i:s'),
-            ],
-        ];
-
-        // Insert ke tabel persons
-        foreach ($persons as $person) {
-            $db->table('persons')->insert($person);
-        }
-
-        // Ambil ID dari persons yang baru dimasukkan
-        $personMahasiswa = $db->table('persons')->where('email', 'ferry@example.com')->get()->getRow();
-        $personDosen1 = $db->table('persons')->where('email', 'thomas@example.com')->get()->getRow();
-        $personDosen2 = $db->table('persons')->where('email', 'akmal@example.com')->get()->getRow();
-        $personDosen3 = $db->table('persons')->where('email', 'ifan@example.com')->get()->getRow();
-        $personAdmin = $db->table('persons')->where('email', 'asih@example.com')->get()->getRow();
-
-        // Contoh Data Users
         $users = [
-            [
-                'person_id'        => $personMahasiswa->id,
-                'password'         => password_hash('1234', PASSWORD_DEFAULT),
-                'verified_at'      => date('Y-m-d H:i:s'),
-                'created_at'      => date('Y-m-d H:i:s'),
-            ],
-            [
-                'person_id'        => $personDosen1->id,
-                'password'         => password_hash('1234', PASSWORD_DEFAULT),
-                'verified_at'      => date('Y-m-d H:i:s'),
-                'created_at'      => date('Y-m-d H:i:s'),
-            ],
-            [
-                'person_id'        => $personDosen2->id,
-                'password'         => password_hash('1234', PASSWORD_DEFAULT),
-                'verified_at'      => date('Y-m-d H:i:s'),
-                'created_at'      => date('Y-m-d H:i:s'),
-            ],
-            [
-                'person_id'        => $personDosen3->id,
-                'password'         => password_hash('1234', PASSWORD_DEFAULT),
-                'verified_at'      => date('Y-m-d H:i:s'),
-                'created_at'      => date('Y-m-d H:i:s'),
-            ],
-            [
-                'person_id'        => $personAdmin->id,
-                'password'         => password_hash('1234', PASSWORD_DEFAULT),
-                'verified_at'      => date('Y-m-d H:i:s'),
-                'created_at'      => date('Y-m-d H:i:s'),
-            ],
+            ['STUDENT', 'student@student.com', '23560001', 'STUDENT', 2, 1],
+            ['ADMIN', 'admin@admin.com', '00000000', 'ADMIN', null, null],
+            ['LECTURER', 'lecturer@lecturer.com', '12345678', 'LECTURER', null, null],
+            ['Thomas Budiman', 'thomas@stmik.com', '10000001', 'LECTURER', null, null],
+            ['Akmal Budi Yulianto', 'akmal@stmik.com', '10000002', 'LECTURER', null, null],
+            ['Chandra Setiawan', 'chandra@stmik.com', '23570001', 'STUDENT', 1, 1],
+            ['Dede Yusuf', 'dede@stmik.com', '23560002', 'STUDENT', 2, 1],
+            ['Eko Purnomo', 'eko@stmik.com', '23360003', 'STUDENT', 3, 1],
+            ['Fajar Setiawan', 'fajar@stmik.com', '23360004', 'STUDENT', 3, 1],
+            ['Handi Sukatama', 'handi@stmik.com', '23560005', 'STUDENT', 2, 1],
+            ['John Sitanggang', 'john@stmik.com', '23570006', 'STUDENT', 1, 1],
+            ['Marjono', 'marjono@stmik.com', '23570007', 'STUDENT', 1, 1],
+            ['Nana Sujana', 'nana@stmik.com', '23560008', 'STUDENT', 2, 1],
+            ['Opin Saputra', 'opin@stmik.com', '23560009', 'STUDENT', 2, 1],
+            ['Riris Setyo', 'riris@stmik.com', '23570010', 'STUDENT', 1, 1],
         ];
-
-        // Insert ke tabel users
-        foreach ($users as $user) {
-            $db->table('users')->insert($user);
+        foreach ($users as $u) {
+            $db->table('users')->insert([
+                'name'          => $u[0],
+                'email'         => $u[1],
+                'password'      => password_hash('1234', PASSWORD_DEFAULT),
+                'number'        => $u[2],
+                'division'      => $u[3],
+                'major_id'      => $u[4],
+                'semester_id'   => $u[5],
+                'verified_at'   => date('Y-m-d H:i:s'),
+                'created_at'    => date('Y-m-d H:i:s'),
+            ]);
         }
     }
 }

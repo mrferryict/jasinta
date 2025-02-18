@@ -74,4 +74,10 @@ return [
    'captchaMismatched' => 'Kode keamanan tidak cocok',
    'enterCaptcha' => 'Masukan kode keamanan',
    'supervision' => 'Bimbingan',
+   'accessDenied' => 'Access denied',
+   'users' => 'Pengguna',
+   'noUsers' => 'Belum ada pengguna',
+   'newUser' => 'Pengguna baru',
+   'createUser' => 'Membuat Pengguna Baru',
+   'createNewUser' => 'Membuat Pengguna Baru',
 ];

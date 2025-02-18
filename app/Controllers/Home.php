@@ -14,11 +14,11 @@ class Home extends BaseController
     {
         if (session()->has('isLoggedIn')) {
             // Cek peran pengguna dan arahkan sesuai
-            if (in_array('ADMINISTRATOR', session()->get('roles'))) {
+            if ('ADMIN' == session()->get('division')) {
                 return redirect()->to('admin');
-            } elseif (in_array('LECTURER', session()->get('roles'))) {
+            } elseif ('LECTURER' == session()->get('division')) {
                 return redirect()->to('lecturer');
-            } elseif (in_array('STUDENT', session()->get('roles'))) {
+            } elseif ('STUDENT' == session()->get('division')) {
                 return redirect()->to('student');
             }
         }

@@ -3,37 +3,46 @@
 namespace App\Controllers;
 
 use CodeIgniter\Controller;
-use App\Models\PersonModel;
 use App\Models\UserModel;
+use App\Models\SemesterModel;
+use App\Models\MajorModel;
 use App\Models\AnnouncementModel;
 use App\Models\MessageModel;
 use App\Models\ActivityLogModel;
+use App\Models\StageModel;
+use CodeIgniter\Exceptions\PageNotFoundException;
 use Config\Services;
 
 class Admin extends Controller
 {
    protected $settings;
    protected $session;
-   protected $personModel;
    protected $userModel;
    protected $announcementModel;
    protected $messageModel;
    protected $activityLogModel;
+   protected $stageModel;
+   protected $data;
 
    public function __construct()
    {
-      $settingsService = Services::settingsService();
-      $this->settings = $settingsService->getSettingsAsArray();
       $this->session = session();
-      $this->personModel = new PersonModel();
+      $this->settings = Services::settingsService()->getSettingsAsArray();
       $this->userModel = new UserModel();
       $this->announcementModel = new AnnouncementModel();
       $this->messageModel = new MessageModel();
       $this->activityLogModel = new ActivityLogModel();
+      $this->stageModel       = new StageModel();
+
+      $this->data = [
+         'settings' => $this->settings,
+         'sessions' => $this->session,
+      ];
    }
 
-   public function index()
+   public function index(): string  // dashboard
    {
+
       $progressModel = new \App\Models\ProgressModel();
       $stageModel = new \App\Models\StageModel();
 
@@ -66,9 +75,8 @@ class Admin extends Controller
       $deadlineSidang = strtotime($deadlines['SIDANG']); // Ambil deadline sidang dari stages
       $remainingDays = round(($deadlineSidang - time()) / 86400);
 
-      $data = [
-         'settings' => $this->settings,
-         'sessions' => $this->session,
+      $dataView = $this->data + [
+         'activeMenu' => 'people',
          'infoBoxes' => [
             'totalActiveStudents' => $totalStudents,
             'studentsOnTrack' => $studentsOnTrack,
@@ -80,21 +88,124 @@ class Admin extends Controller
          'deadlines' => $deadlines, // Menggunakan deadlines dari stages
          'stages' => array_column($stageModel->orderBy('id', 'ASC')->findAll(), 'name'),
       ];
-      return view('admin/dashboard', $data);
+      return view('admin/dashboard', $dataView);
    }
 
-   // ===================== MASTER DATA =====================
-   public function mahasiswa()
+
+   //  MASTER DATA: USERS
+
+   public function users()
    {
-      $data['mahasiswa'] = $this->personModel->where('division', 'mahasiswa')->findAll();
-      return view('admin/mahasiswa', $data);
+      $userModel = new UserModel();
+
+      $dataView = $this->data + [
+         'pageTitle' => lang('App.users'),
+         'activeMenu' => 'users',
+         'users' => $userModel->getAllUsers()
+      ];
+      return view('admin/users', $dataView);
    }
 
-   public function dosen()
+   public function createUser()
    {
-      $data['dosen'] = $this->personModel->where('division', 'dosen')->findAll();
-      return view('admin/dosen', $data);
+      $majorModel = new MajorModel();
+      $semesterModel = new SemesterModel();
+
+
+      $dataView = $this->data + [
+         'pageTitle' => lang('App.createUser'),
+         'activeMenu' => 'users',
+         'majors' => $majorModel->getAllMajors(),
+         'semesters' => $semesterModel->getActiveSemesters(),
+      ];
+      return view('admin/create_user', $dataView);
    }
+
+   public function saveUser()
+   {
+      $userModel = new UserModel();
+      $postData = $this->request->getPost();
+
+      // Validasi dasar
+      $validationRules = [
+         'division' => 'required|in_list[STUDENT,LECTURER,ADMIN]',
+         'name' => 'required',
+         'email' => 'required|valid_email|is_unique[users.email]',
+         'password' => 'required|min_length[8]',
+         'number' => 'required|numeric',
+         'major_id' => 'permit_empty|is_not_unique[majors.id]',
+         'semester_id' => 'permit_empty|is_not_unique[semesters.id]',
+      ];
+
+      if (!$this->validate($validationRules)) {
+         return redirect()->back()->withInput()->with('validation', \Config\Services::validation());
+      }
+
+      // Validasi tambahan untuk STUDENT
+      if ($postData['division'] === 'STUDENT') {
+         $nim = $postData['number'];
+         $major_id = $postData['major_id'];
+
+         // Pastikan NIM 8 digit dan digit ke-3 & ke-4 sesuai jurusan
+         if (strlen($nim) !== 8 || !ctype_digit($nim)) {
+            $validation = \Config\Services::validation();
+            $validation->setError('number', 'NIM harus 8 angka');
+            return redirect()->back()->withInput()->with('validation', $validation);
+         }
+
+         $prefix = substr($nim, 2, 2);
+         $allowedMajors = [
+            '36' => 3, // D3 Manajemen Informatika
+            '56' => 2, // S1 Sistem Informasi
+            '57' => 1, // S1 Teknik Informatika
+         ];
+
+         if (!array_key_exists($prefix, $allowedMajors) || $major_id != $allowedMajors[$prefix]) {
+            $validation = \Config\Services::validation();
+            $validation->setError('number', 'NIM tidak sesuai dengan jurusan yang dipilih.');
+            return redirect()->back()->withInput()->with('validation', $validation);
+         }
+      }
+
+      // Jika validasi lolos, simpan user
+      // Hash password sebelum disimpan
+      $postData['password'] = password_hash($postData['password'], PASSWORD_DEFAULT);
+      $postData['verified_at'] = date('Y-m-d H:i:s');
+      $userModel->insert($postData);
+      return redirect()->to('/admin/users')->with('success', 'User berhasil ditambahkan.');
+   }
+
+
+   public function checkNIM(string $nim, string $major_id, array $data): bool
+   {
+      // Pastikan NIM terdiri dari 8 digit
+      if (strlen($nim) !== 8 || !is_numeric($nim)) {
+         return false;
+      }
+
+      // Ambil dua digit ke-3 dan ke-4
+      $prefix = substr($nim, 2, 2);
+
+      // Daftar jurusan sesuai dengan kode
+      $allowedMajors = [
+         '36' => 3, // ID untuk D3 Manajemen Informatika
+         '56' => 2, // ID untuk S1 Sistem Informasi
+         '57' => 1, // ID untuk S1 Teknik Informatika
+      ];
+
+      // Pastikan kode ada dalam daftar
+      if (!array_key_exists($prefix, $allowedMajors)) {
+         return false;
+      }
+
+      // Pastikan major_id sesuai dengan kode
+      if ($major_id != $allowedMajors[$prefix]) {
+         return false;
+      }
+
+      return true;
+   }
+
 
    // ===================== ANNOUNCEMENTS =====================
    public function announcement()
@@ -235,14 +346,15 @@ class Admin extends Controller
 
 
    // ===================== AKTIVITAS PENGGUNA (AUDIT TRAILS) =====================
-   public function activityLogs()
+   public function activityLogs(): string
    {
       $activityLogModel = new ActivityLogModel();
-      $data = [
-         'pageTitle' => 'Activity Logs',
-         'logs' => $activityLogModel->getAllLogs(),
-      ];
 
-      return view('admin/activity_logs', $data);
+      $dataView = $this->data + [
+         'pageTitle' => lang('App.activityLogs'),
+         'activeMenu' => 'activityLogs',
+         'logs' => $activityLogModel->getAllLogs()
+      ];
+      return view('admin/activity_logs', $dataView);
    }
 }

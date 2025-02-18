@@ -26,11 +26,14 @@ $routes->group('auth', function ($routes) {
    $routes->get('logout', 'Auth::logout');
 });
 
-// ADMINISTRATOR ROUTES (Hanya Bisa Diakses oleh Administrator)
-$routes->group('admin', ['filter' => 'auth:ADMIN'], function ($routes) {
+// ADMIN ROUTES (Hanya Bisa Diakses oleh ADMIN)
+$routes->group('admin', ['filter' => 'access:ADMIN'], function ($routes) {
    $routes->get('/', 'Admin::index');
-   $routes->get('students', 'Admin::students');
-   $routes->get('lecturers', 'Admin::lecturers');
+   $routes->get('users', 'Admin::users');
+   $routes->get('create_user', 'Admin::createUser');
+   $routes->post('save_user', 'Admin::saveUser');
+   $routes->post('users/toggle-status', 'UserController::toggleStatus'); // Tambahan
+   $routes->post('users/delete', 'UserController::deleteUser'); // Tambahan
    $routes->get('announcements', 'Admin::announcements');
    $routes->post('announcements/create', 'Admin::createAnnouncement');
    $routes->get('messages', 'Admin::messages');
@@ -44,8 +47,9 @@ $routes->group('admin', ['filter' => 'auth:ADMIN'], function ($routes) {
    $routes->get('activity_logs', 'Admin::activityLogs');
 });
 
-// STUDENT ROUTES (Hanya Bisa Diakses oleh Mahasiswa)
-$routes->group('student', ['filter' => 'auth:STUDENT'], function ($routes) {
+
+// STUDENT ROUTES (Hanya Bisa Diakses oleh STUDENT)
+$routes->group('student', ['filter' => 'access:STUDENT'], function ($routes) {
    $routes->get('/', 'Student::index');
    $routes->get('registration', 'Student::registration'); // Menampilkan halaman pendaftaran mahasiswa
    $routes->get('requirements/(:any)', 'Student::requirements/$1');
@@ -56,8 +60,8 @@ $routes->group('student', ['filter' => 'auth:STUDENT'], function ($routes) {
    $routes->post('messages/send', 'Student::sendMessage');
 });
 
-// LECTURER ROUTES (Hanya Bisa Diakses oleh Dosen)
-$routes->group('lecturer', ['filter' => 'auth:LECTURER'], function ($routes) {
+// LECTURER ROUTES (Hanya Bisa Diakses oleh LECTURER)
+$routes->group('lecturer', ['filter' => 'access:LECTURER'], function ($routes) {
    $routes->get('/', 'Lecturer::index');
    $routes->get('supervision', 'Lecturer::supervision');
    $routes->get('thesis-evaluation', 'Lecturer::thesisEvaluation');

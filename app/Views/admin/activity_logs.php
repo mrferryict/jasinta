@@ -17,9 +17,9 @@
          <div class="row">
             <div class="col-12">
                <div class="card">
-                  <div class="card-header">
+                  <!-- <div class="card-header">
                      <h3 class="card-title">User Activity Logs</h3>
-                  </div>
+                  </div> -->
                   <div class="card-body">
                      <table id="logsTable" class="table table-bordered">
                         <thead>
@@ -57,7 +57,7 @@
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
 <?= $this->endSection() ?>
 
-<?= $this->section('js') ?>
+<?= $this->section('script') ?>
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
 <script>
