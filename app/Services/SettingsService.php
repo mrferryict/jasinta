@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use App\Models\SettingsModel;
+use App\Models\SettingModel;
 
 class SettingsService
 {
@@ -10,7 +10,7 @@ class SettingsService
 
    public function __construct()
    {
-      $this->settingsModel = new SettingsModel();
+      $this->settingsModel = new SettingModel();
    }
 
    public function getSettingsAsArray()

@@ -1,30 +1,18 @@
 <?php
-$roles = session()->get('roles');
-$division = session()->get('division');
-$userId = session()->get('user_id');
 
 $s = new \App\Models\StageModel();
-$stages = $s->getStageNames();
 $stageRoutes = $s->getAllStages();
-
-$progressModel = new \App\Models\ProgressModel();
-$currentStage = $progressModel
-   ->select('stages.name')
-   ->join('stages', 'stages.id = progress.stage_id', 'left')
-   ->join('thesis', 'thesis.id = progress.thesis_id', 'left')
-   ->where('thesis.student_id', $userId)
-   ->orderBy('progress.created_at', 'DESC')
-   ->limit(1)
-   ->first(); // Menggunakan first() agar lebih aman
-
-$stageIndex = array_search($currentStage, $stages);
-$majorModel = new \App\Models\MajorModel();
 ?>
 
 <aside class="app-sidebar bg-body-secondary shadow" data-bs-theme="dark">
    <!--begin::Sidebar Brand-->
    <div class="sidebar-brand">
-      <a href="<?= base_url($division == 'STUDENT' ? 'student' : ($division == 'LECTURER' ? 'lecturer' : 'admin')) ?>" class="brand-link">
+      <?php $division = session()->get('division'); ?>
+      <a href="<?= base_url(match ($division) {
+                  'STUDENT' => 'student',
+                  'LECTURER' => 'lecturer',
+                  default => 'admin'
+               }) ?>" class="brand-link">
          <img src="<?= f_images('logo_jasinta_light.png') ?>" alt="Logo JASINTA" class="brand-image" />
          <span class="brand-text fw-light"><?= langUppercase('App.name') ?></span>
       </a>
@@ -67,7 +55,7 @@ $majorModel = new \App\Models\MajorModel();
                         </a>
                      </li>
                      <li class="nav-item small">
-                        <a href="<?= base_url('admin/settings') ?>" class="nav-link<?= ($activeMenu == 'settings') ? 'active' : '' ?>">
+                        <a href="<?= base_url('admin/settings') ?>" class="nav-link <?= ($activeMenu == 'settings') ? 'active' : '' ?>">
                            <i class="nav-icon bi bi-gear"></i>
                            <p><?= langUppercase('App.settings') ?></p>
                         </a>
@@ -101,16 +89,18 @@ $majorModel = new \App\Models\MajorModel();
 
 
             <!-- **Menu untuk STUDENT** -->
-
             <?php if ($division == 'STUDENT'): $i = 1; ?>
-               <?php foreach ($stages as $index => $stage): ?>
+               <?php $passed = true;
+               $i = 1; ?>
+               <?php foreach ($stageRoutes as $sr): ?>
                   <li class="nav-item">
-                     <a href="<?= $index <= $stageIndex ? base_url('student/' . strtolower(str_replace(' ', '_', $stage))) : '#' ?>"
-                        class="nav-link <?= $index > $stageIndex ? 'disabled text-danger' : '' ?>">
-                        <i class="nav-icon bi <?= $index > $stageIndex ? 'bi-x-circle' : 'bi-arrow-right-circle' ?>"></i>
-                        <p><?= $i++ . '. ' . $stage ?></p>
+                     <a href="<?= $passed ? base_url('student/' . strtolower(str_replace(' ', '_', $sr['name']))) : '#' ?>"
+                        class="nav-link <?= $passed ? '' : 'disabled' ?>">
+                        <i class="nav-icon bi <?= $passed ? 'bi-arrow-right-circle-fill text-success' : 'bi-x-circle-fill text-danger' ?>"></i>
+                        <p class="<?= $passed ? '' : 'text-secondary' ?>"><?= $i++ . '. ' . $sr['name'] ?></p>
                      </a>
                   </li>
+                  <?php if ($sr['name'] == $student['stage_name']) $passed = false; ?>
                <?php endforeach; ?>
             <?php endif; ?>
 

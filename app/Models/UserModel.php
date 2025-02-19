@@ -63,6 +63,12 @@ class UserModel extends Model
       return $this->find($userId);
    }
 
+   public function getUserNameById($userId)
+   {
+      return $this->select('name')->where('id', $userId)->first();
+   }
+
+
    /**
     * Ubah status pengguna (aktif/nonaktif).
     */

@@ -50,12 +50,11 @@
                         </div>
                         <div class="mb-3">
                            <label for="number" class="form-label" id="number_type">NIM/NIDN/NIP</label>
-                           <input type="text" class="form-control" id="number" name="number" oninput="this.value = this.value.replace(/[^0-9]/g, '')" value="<?= old('number') ?>">
+                           <input type="text" class="form-control" id="number" name="number" maxlength="8" oninput="this.value = this.value.replace(/[^0-9]/g, '')" value="<?= old('number') ?>">
                         </div>
                         <div class="mb-3" id="major_group">
                            <label for="major_id" class="form-label">Jurusan</label>
                            <select class="form-select" id="major_id" name="major_id">
-                              <option value="">-- Pilih Jurusan --</option>
                               <?php foreach ($majors as $major): ?>
                                  <option value="<?= $major['id'] ?>" <?= old('major_id') == $major['id'] ? 'selected' : '' ?>><?= esc($major['name']) ?></option>
                               <?php endforeach; ?>

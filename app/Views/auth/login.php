@@ -45,11 +45,11 @@
                   <?php endif; ?>
 
                   <form action="<?= base_url('auth/login') ?>" method="post">
-                     <div class="form-group form-control-md first">
+                     <div class="form-group form-control-md first field--not-empty">
                         <label for="email"><?= lang('App.email') ?></label>
                         <input type="email" name="email" class="form-control" id="email" required autofocus>
                      </div>
-                     <div class="form-group form-control-md mb-3">
+                     <div class="form-group form-control-md mb-3 field--not-empty">
                         <label for="password"><?= lang('App.password') ?></label>
                         <input type="password" name="password" class="form-control" id="password" required>
                      </div>

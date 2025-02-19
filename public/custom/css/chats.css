@@ -1,0 +1,200 @@
+  /* 💬 Container daftar chat (Kiri) */
+  .chat-list-container {
+     background: #202C33;
+     color: white;
+     padding: 10px;
+     overflow-y: auto;
+  }
+
+  /* 🗂️ Header daftar chat */
+  .chat-list-header {
+     font-size: 1.2em;
+     font-weight: bold;
+     padding: 10px;
+  }
+
+  /* 🔹 Item dalam daftar chat */
+  .chat-item {
+     display: flex;
+     align-items: center;
+     padding: 10px;
+     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+     cursor: pointer;
+     transition: background 0.2s;
+  }
+
+  .chat-item.active {
+     background: rgba(255, 255, 255, 0.2);
+  }
+
+  .chat-item:hover {
+     background: rgba(255, 255, 255, 0.15);
+  }
+
+  /* 🖼 Avatar dalam daftar chat */
+  .chat-avatar img {
+     width: 45px;
+     height: 45px;
+     border-radius: 50%;
+     margin-right: 10px;
+  }
+
+  /* 🔹 Info daftar chat */
+  .chat-info {
+     flex-grow: 1;
+  }
+
+  .chat-name {
+     font-weight: bold;
+  }
+
+  .chat-last-message {
+     font-size: 0.85em;
+     color: rgba(255, 255, 255, 0.6);
+  }
+
+  .chat-meta {
+     text-align: right;
+  }
+
+  .chat-time {
+     font-size: 0.75em;
+     color: rgba(255, 255, 255, 0.7);
+  }
+
+  .chat-unread {
+     background: red;
+     color: white;
+     border-radius: 50%;
+     padding: 4px 8px;
+     font-size: 0.75em;
+     font-weight: bold;
+  }
+
+  /* 📦 Container area chat (Kanan) */
+  .chat-box-container,
+  .chat-list-container {
+     height: 83vh;
+  }
+
+  .chat-box-container {
+     background: #0C1317;
+     color: white;
+     display: flex;
+     flex-direction: column;
+     position: relative;
+  }
+
+  /* 📌 Header chat (Tetap di atas dalam box) */
+  .chat-header {
+     position: absolute;
+     top: 0;
+     left: 0;
+     width: 100%;
+     z-index: 1000;
+     background: #202C33;
+     padding: 15px;
+     border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+     display: flex;
+     align-items: center;
+  }
+
+  /* 🖼 Avatar dalam chat header */
+  .chat-header .chat-avatar img {
+     width: 40px;
+     height: 40px;
+     border-radius: 50%;
+     margin-right: 10px;
+  }
+
+  /* 🗨 Chat utama */
+  .chat-box {
+     display: flex;
+     flex-direction: column;
+     flex-grow: 1;
+     width: 100%;
+     padding: 70px 15px 15px;
+     /* Tambahkan padding atas agar tidak tertutup header */
+     overflow-y: auto;
+     max-height: calc(100vh - 130px);
+     /* Sisakan tempat untuk input */
+     scrollbar-width: thin;
+     scrollbar-color: #888 #0C1317;
+  }
+
+  /* 🌟 Scrollbar lebih ramping */
+  .chat-box::-webkit-scrollbar {
+     width: 6px;
+  }
+
+  .chat-box::-webkit-scrollbar-thumb {
+     background: #888;
+     border-radius: 5px;
+  }
+
+  /* 🗨 Chat Bubble */
+  .chat-bubble {
+     max-width: 75%;
+     min-width: 20%;
+     padding: 10px;
+     border-radius: 10px;
+     margin-bottom: 10px;
+     position: relative;
+     word-wrap: break-word;
+  }
+
+  /* 🔹 Chat pengguna (Kanan) */
+  .chat-right {
+     align-self: flex-end;
+     text-align: right;
+     background-color: #005C4B;
+     color: white;
+     border-bottom-right-radius: 0;
+  }
+
+  /* 🔹 Chat penerima (Kiri) */
+  .chat-left {
+     align-self: flex-start;
+     text-align: left;
+     background-color: #202C33;
+     color: white;
+     border-bottom-left-radius: 0;
+  }
+
+  /* ⏳ Waktu dalam chat */
+  .chat-time {
+     display: block;
+     font-size: 0.75em;
+     color: rgba(255, 255, 255, 0.6);
+     margin-top: 5px;
+     position: absolute;
+     bottom: 5px;
+     right: 10px;
+  }
+
+  /* 🔻 Input chat */
+  .chat-input {
+     display: flex;
+     gap: 10px;
+     padding: 10px;
+     background: #202C33;
+     border-top: 1px solid rgba(255, 255, 255, 0.2);
+     align-items: center;
+  }
+
+  /* 📩 Textarea untuk mengetik pesan */
+  .chat-input textarea {
+     flex-grow: 1;
+     border: none;
+     padding: 10px;
+     border-radius: 5px;
+     outline: none;
+     resize: none;
+     background: #2B3943;
+     color: white;
+  }
+
+  /* 📎 Input file */
+  .chat-input .form-control-file {
+     max-width: 150px;
+  }

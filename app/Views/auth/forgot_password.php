@@ -47,7 +47,7 @@
                   <form action="<?= base_url('forgot-password') ?>" method="post">
                      <div class="form-group first">
                         <label for="email"><?= lang('App.email') ?></label>
-                        <input type="email" name="email" class="form-control" id="email" required>
+                        <input type="email" name="email" class="form-control" id="email" autofocus oninput="this.value = this.value.toLowerCase()" required>
                      </div>
                      <input type="submit" value="<?= lang('App.resetPassword') ?>" class="btn btn-block btn-primary">
                   </form>

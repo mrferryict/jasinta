@@ -44,7 +44,7 @@
                                     <td><?= date('d-m-Y H:i', strtotime($announcement['created_at'])) ?></td>
                                     <td><?= $announcement['title'] ?></td>
                                     <td><?= $announcement['content'] ?></td>
-                                    <td><a href="<?= base_url("mahasiswa/chat/1") ?>" class="btn btn-link">Tanya/Jawab</a></td>
+                                    <td><a href="<?= base_url('student/chats') ?>" class="btn btn-link"><?= lang('App.askAdmin') ?></a></td>
                                  </tr>
                               <?php endforeach; ?>
                            </tbody>

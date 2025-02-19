@@ -12,6 +12,8 @@ $routes = Services::routes();
 // Default Home Route
 $routes->get('/', 'Home::index');
 
+
+
 // AUTHENTICATION ROUTES
 $routes->group('auth', function ($routes) {
    $routes->get('login', 'Auth::login');
@@ -32,13 +34,22 @@ $routes->group('admin', ['filter' => 'access:ADMIN'], function ($routes) {
    $routes->get('users', 'Admin::users');
    $routes->get('create_user', 'Admin::createUser');
    $routes->post('save_user', 'Admin::saveUser');
-   $routes->post('users/toggle-status', 'UserController::toggleStatus'); // Tambahan
-   $routes->post('users/delete', 'UserController::deleteUser'); // Tambahan
+
+   $routes->post('users/toggle-status', 'UserController::toggleStatus'); // API
+   $routes->post('users/delete', 'UserController::deleteUser'); // API
+   $routes->post('log/exportToExcel', 'LogController::exportToExcel'); // API
+
+   $routes->get('majors', 'Admin::majors');
+   $routes->get('settings', 'Admin::settings');
+
+   $routes->get('chats', 'Admin::chat');
+   $routes->get('chat/(:any)', 'Admin::chat/$1'); // API
+   $routes->post('chat/(:any)/send', 'Admin::sendMessage/$1'); // API
+
    $routes->get('announcements', 'Admin::announcements');
    $routes->post('announcements/create', 'Admin::createAnnouncement');
-   $routes->get('messages', 'Admin::messages');
-   $routes->post('messages/send', 'Admin::sendMessage');
-   $routes->get('student-registrations', 'Admin::studentRegistrations');
+
+   $routes->get('registrations', 'Admin::registrations');
    $routes->post('approve-registration/(:num)', 'Admin::approveRegistration/$1');
    $routes->get('requirements', 'Admin::requirements');
    $routes->post('requirements/create', 'Admin::createRequirement');
@@ -56,13 +67,15 @@ $routes->group('student', ['filter' => 'access:STUDENT'], function ($routes) {
    $routes->post('requirements/submit', 'Student::submitRequirement');
    $routes->get('thesis', 'Student::thesis');
    $routes->post('thesis/proposal', 'Student::submitProposal');
-   $routes->get('messages', 'Student::messages');
-   $routes->post('messages/send', 'Student::sendMessage');
+   $routes->get('chats', 'Student::chat');
+   $routes->get('chat/(:any)', 'Student::chat/$1');
+   $routes->post('chat/(:any)/send', 'Student::sendMessage/$1'); // API
 });
 
 // LECTURER ROUTES (Hanya Bisa Diakses oleh LECTURER)
 $routes->group('lecturer', ['filter' => 'access:LECTURER'], function ($routes) {
    $routes->get('/', 'Lecturer::index');
+   $routes->get('chats', 'Lecturer::chat');
    $routes->get('supervision', 'Lecturer::supervision');
    $routes->get('thesis-evaluation', 'Lecturer::thesisEvaluation');
    $routes->post('thesis-evaluation/submit', 'Lecturer::submitEvaluation');

@@ -3,61 +3,80 @@
 namespace App\Controllers;
 
 use CodeIgniter\Controller;
-use App\Models\UserModel;
-use App\Models\SemesterModel;
-use App\Models\MajorModel;
+use CodeIgniter\I18n\Time;
+
 use App\Models\AnnouncementModel;
-use App\Models\MessageModel;
-use App\Models\ActivityLogModel;
+use App\Models\ChatModel;
+use App\Models\LogModel;
+use App\Models\MajorModel;
+use App\Models\ProgressModel;
+use App\Models\SemesterModel;
+use App\Models\SettingModel;
 use App\Models\StageModel;
-use CodeIgniter\Exceptions\PageNotFoundException;
+use App\Models\UserModel;
+
 use Config\Services;
 
 class Admin extends Controller
 {
    protected $settings;
    protected $session;
-   protected $userModel;
+
    protected $announcementModel;
-   protected $messageModel;
-   protected $activityLogModel;
+   protected $chatModel;
+   protected $logModel;
+   protected $majorModel;
+   protected $progressModel;
+   protected $semesterModel;
+   protected $settingModel;
    protected $stageModel;
+   protected $userModel;
+
+   protected $currentUserID;
    protected $data;
 
    public function __construct()
    {
-      $this->session = session();
-      $this->settings = Services::settingsService()->getSettingsAsArray();
-      $this->userModel = new UserModel();
-      $this->announcementModel = new AnnouncementModel();
-      $this->messageModel = new MessageModel();
-      $this->activityLogModel = new ActivityLogModel();
-      $this->stageModel       = new StageModel();
+      $this->session          = session();
+      $this->settings         = Services::settingsService()->getSettingsAsArray();
 
+      $this->announcementModel = new AnnouncementModel();
+      $this->chatModel        = new ChatModel();
+      $this->logModel         = new LogModel();
+      $this->majorModel       = new MajorModel();
+      $this->progressModel    = new ProgressModel();
+      $this->semesterModel    = new SemesterModel();
+      $this->settingModel     = new SettingModel();
+      $this->stageModel       = new StageModel();
+      $this->userModel        = new UserModel();
+
+      $this->currentUserID    = session()->get('user_id');
+      $sendersList = $this->chatModel->getChatSendersWithUnreadCount($this->currentUserID);
       $this->data = [
-         'settings' => $this->settings,
-         'sessions' => $this->session,
+         'settings'     => $this->settings,
+         'sessions'     => $this->session,
+         'sendersList'  => $sendersList,
       ];
    }
 
+   //
+   // DASHBOARD
+   //
    public function index(): string  // dashboard
    {
 
-      $progressModel = new \App\Models\ProgressModel();
-      $stageModel = new \App\Models\StageModel();
-
       // **1. TOTAL MAHASISWA PESERTA**
-      $totalStudents = $progressModel->countAll();
+      $totalStudents = $this->progressModel->countAll();
 
       // **2. AMBIL DEADLINE TIAP TAHAPAN DARI TABEL STAGES**
-      $stages = $stageModel->findAll(); // Ambil semua data stages
+      $stages = $this->stageModel->findAll(); // Ambil semua data stages
       $deadlines = [];
       foreach ($stages as $stage) {
          $deadlines[$stage['name']] = $stage['deadline_at']; // Simpan deadline_at dengan key nama stage
       }
 
       // **3. AMBIL DATA MAHASISWA & HITUNG MAHASISWA ON-TRACK**
-      $students = $progressModel->getStudentProgress();
+      $students = $this->progressModel->getStudentProgress();
       $studentsOnTrack = 0;
 
       foreach ($students as $student) {
@@ -76,7 +95,7 @@ class Admin extends Controller
       $remainingDays = round(($deadlineSidang - time()) / 86400);
 
       $dataView = $this->data + [
-         'activeMenu' => 'people',
+         'activeMenu' => '',
          'infoBoxes' => [
             'totalActiveStudents' => $totalStudents,
             'studentsOnTrack' => $studentsOnTrack,
@@ -84,16 +103,17 @@ class Admin extends Controller
          ],
          'pageTitle' => 'DASHBOARD',
          'tableTitle' => lang('App.monitoringTheStagesOfStudents'),
-         'students' => $progressModel->getStudentProgress(),
+         'students' => $this->progressModel->getStudentProgress(),
          'deadlines' => $deadlines, // Menggunakan deadlines dari stages
-         'stages' => array_column($stageModel->orderBy('id', 'ASC')->findAll(), 'name'),
+         'stages' => array_column($this->stageModel->orderBy('id', 'ASC')->findAll(), 'name'),
       ];
+      $this->logModel->logActivity($this->currentUserID, 'VIEW', lang('App.dashboard'));
       return view('admin/dashboard', $dataView);
    }
 
-
+   //
    //  MASTER DATA: USERS
-
+   //
    public function users()
    {
       $userModel = new UserModel();
@@ -103,6 +123,7 @@ class Admin extends Controller
          'activeMenu' => 'users',
          'users' => $userModel->getAllUsers()
       ];
+      $this->logModel->logActivity($this->currentUserID, 'VIEW', lang('App.users'));
       return view('admin/users', $dataView);
    }
 
@@ -111,19 +132,18 @@ class Admin extends Controller
       $majorModel = new MajorModel();
       $semesterModel = new SemesterModel();
 
-
       $dataView = $this->data + [
          'pageTitle' => lang('App.createUser'),
          'activeMenu' => 'users',
-         'majors' => $majorModel->getAllMajors(),
+         'majors' => $this->majorModel->getAllMajors(),
          'semesters' => $semesterModel->getActiveSemesters(),
       ];
+      $this->logModel->logActivity($this->currentUserID, 'VIEW', lang('App.createUser'));
       return view('admin/create_user', $dataView);
    }
 
    public function saveUser()
    {
-      $userModel = new UserModel();
       $postData = $this->request->getPost();
 
       // Validasi dasar
@@ -162,7 +182,7 @@ class Admin extends Controller
 
          if (!array_key_exists($prefix, $allowedMajors) || $major_id != $allowedMajors[$prefix]) {
             $validation = \Config\Services::validation();
-            $validation->setError('number', 'NIM tidak sesuai dengan jurusan yang dipilih.');
+            $validation->setError('number', lang('App.nimAndMajorMismatch'));
             return redirect()->back()->withInput()->with('validation', $validation);
          }
       }
@@ -171,10 +191,42 @@ class Admin extends Controller
       // Hash password sebelum disimpan
       $postData['password'] = password_hash($postData['password'], PASSWORD_DEFAULT);
       $postData['verified_at'] = date('Y-m-d H:i:s');
-      $userModel->insert($postData);
-      return redirect()->to('/admin/users')->with('success', 'User berhasil ditambahkan.');
+      $newID = $this->userModel->insert($postData);
+      $this->logModel->logActivity($this->currentUserID, 'CREATE', lang('App.saveNewUser') . ' ID=' . $newID);
+      return redirect()->to('/admin/users')->with('success', lang('App.newUserSuccessfullyAdded'));
    }
 
+   //
+   //  MASTER DATA: PROGRAM STUDI
+   //
+   public function majors()
+   {
+      $majorModel = new MajorModel();
+
+      $dataView = $this->data + [
+         'pageTitle' => lang('App.majors'),
+         'activeMenu' => 'majors',
+         'majors' => $majorModel->getAllMajors(),
+      ];
+      $this->logModel->logActivity($this->currentUserID, 'VIEW', lang('App.majors'));
+      return view('admin/majors', $dataView);
+   }
+
+   //
+   //  MASTER DATA: SETTINGS
+   //
+   public function settings()
+   {
+      $settingModel = new SettingModel();
+
+      $dataView = $this->data + [
+         'pageTitle' => lang('App.settings'),
+         'activeMenu' => 'settings',
+         'settings' => $settingModel->getAllSettings(),
+      ];
+      $this->logModel->logActivity($this->currentUserID, 'VIEW', lang('App.settings'));
+      return view('admin/settings', $dataView);
+   }
 
    public function checkNIM(string $nim, string $major_id, array $data): bool
    {
@@ -202,9 +254,96 @@ class Admin extends Controller
       if ($major_id != $allowedMajors[$prefix]) {
          return false;
       }
-
       return true;
    }
+
+   //
+   // FITUR CHAT
+   //
+
+   public function chat($userId = null)
+   {
+      $chatModel = new ChatModel();
+      $session = session();
+
+      // ✅ Ambil daftar pengirim (semua yang pernah chat dengan admin)
+      $contacts = $chatModel->getChatContacts($this->currentUserID);
+
+      // ✅ Jika tidak ada userId yang dipilih, tampilkan user pertama dari daftar kontak
+      if (!$userId && !empty($contacts)) {
+         $userId = $contacts[0]['id'];
+      }
+
+      // ✅ Ambil data user yang sedang di-chat
+      $receiver = $this->userModel->find($userId);
+      if (!$receiver) {
+         return redirect()->back()->with('error', 'User tidak ditemukan.');
+      }
+
+      // ✅ Ambil isi percakapan antara admin dan user
+      $messages = $chatModel->getMessages($this->currentUserID, $userId);
+
+      // ✅ Tandai semua pesan sebagai telah dibaca
+      $chatModel->markMessagesAsRead($this->currentUserID, $userId);
+
+      // ✅ Simpan userId terakhir yang di-chat di session
+      $lastOpenedChat = $session->get('lastOpenedChat');
+      if ($lastOpenedChat != $userId) {
+         $this->logModel->logActivity($this->currentUserID, 'OPEN_CHATS', 'to: ' . $receiver['name']);
+         $session->set('lastOpenedChat', $userId); // Simpan ID user terakhir
+      }
+
+      $dataView = $this->data + [
+         'pageTitle' => 'Chat dengan ' . esc($receiver['name']),
+         'activeMenu' => '',
+         'contacts' => $contacts,
+         'receiver' => $receiver,
+         'messages' => $messages,
+         'activeChatId' => $userId,
+         'currentUserID' => $this->currentUserID,
+      ];
+
+      return view('admin/chat', $dataView);
+   }
+
+
+   // ✅ Fitur Kirim Pesan dari Admin ke Mahasiswa/Dosen
+   public function sendMessage($userId)
+   {
+      $adminId = session()->get('user_id'); // Admin yang sedang login
+
+      $message = $this->request->getPost('message');
+      $file = $this->request->getFile('file');
+      $fileName = null;
+
+      // ✅ Validasi file
+      if ($file && $file->isValid() && !$file->hasMoved()) {
+         $validTypes = ['image/png', 'image/jpeg', 'application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'];
+
+         if (!in_array($file->getMimeType(), $validTypes)) {
+            return $this->response->setJSON(['error' => 'Format file tidak diperbolehkan.'])->setStatusCode(400);
+         }
+
+         $fileName = $file->getRandomName();
+         $file->move('uploads/chat/', $fileName);
+      }
+
+      if (!$message && !$fileName) {
+         return $this->response->setJSON(['error' => 'Pesan atau file harus diisi'])->setStatusCode(400);
+      }
+
+      $chatModel = new ChatModel();
+      $chatModel->insert([
+         'sender_id' => $adminId,
+         'receiver_id' => $userId,
+         'message' => $message,
+         'file' => $fileName,
+         'created_at' => date('Y-m-d H:i:s')
+      ]);
+      $this->logModel->logActivity($this->currentUserID, 'SEND_CHAT', 'to: ' . $this->userModel->getUserNameById($userId)['name']);
+      return $this->response->setJSON(['success' => true]);
+   }
+
 
 
    // ===================== ANNOUNCEMENTS =====================
@@ -234,44 +373,6 @@ class Admin extends Controller
    }
 
 
-
-   // ===================== CHAT =====================
-   public function chat($studentId)
-   {
-      $adminId = $this->session->get('user_id');
-      $messages = $this->messageModel->getMessages($studentId, $adminId);
-
-      $data = [
-         'messages' => $messages,
-         'studentId' => $studentId,
-      ];
-
-      return view('admin/chat', $data);
-   }
-
-   public function sendMessage()
-   {
-      $adminId = $this->session->get('user_id');
-      $studentId = $this->request->getPost('student_id');
-      $message = $this->request->getPost('message');
-
-      $filePath = null;
-      if ($file = $this->request->getFile('attachment')) {
-         if ($file->isValid() && !$file->hasMoved()) {
-            $filePath = $file->store();
-         }
-      }
-
-      $this->messageModel->insert([
-         'sender_id' => $adminId,
-         'receiver_id' => $studentId,
-         'content' => $message,
-         'file_path' => $filePath,
-         'created_at' => date('Y-m-d H:i:s')
-      ]);
-
-      return redirect()->back();
-   }
 
    // ===================== PENDAFTARAN MAHASISWA =====================
    public function daftarPendaftaran()
@@ -348,13 +449,12 @@ class Admin extends Controller
    // ===================== AKTIVITAS PENGGUNA (AUDIT TRAILS) =====================
    public function activityLogs(): string
    {
-      $activityLogModel = new ActivityLogModel();
-
       $dataView = $this->data + [
          'pageTitle' => lang('App.activityLogs'),
          'activeMenu' => 'activityLogs',
-         'logs' => $activityLogModel->getAllLogs()
+         'logs' => $this->logModel->getAllLogs(),
       ];
+      $this->logModel->logActivity($this->currentUserID, 'VIEW', lang('App.activityLogs'));
       return view('admin/activity_logs', $dataView);
    }
 }

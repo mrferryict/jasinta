@@ -67,8 +67,8 @@ class StudentModel extends Model
    {
       return $this->select('
             users.*,
-            stages.name AS stage_name,
-            thesis.title AS thesis_title,
+            COALESCE(stages.name, "") AS stage_name,
+            COALESCE(thesis.title, "") AS thesis_title,
             (CASE
                 WHEN users.verified_at IS NULL THEN "INACTIVE"
                 ELSE "ACTIVE"
@@ -78,6 +78,7 @@ class StudentModel extends Model
          ->join('progress', 'progress.thesis_id = thesis.id', 'left')
          ->join('stages', 'stages.id = progress.stage_id', 'left')
          ->where('users.id', $studentId)
+         ->groupBy('users.id') // Menghindari duplikasi jika ada banyak progress
          ->first();
    }
 

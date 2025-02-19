@@ -84,10 +84,11 @@ class Initialtables extends Migration
         $this->forge->addForeignKey('student_id', 'users', 'id', 'CASCADE', 'CASCADE');
         $this->forge->createTable('thesis');
 
-        // TABEL MESSAGES
+        // TABEL CHATS
         $this->forge->addField([
             'id' => ['type' => 'INT', 'auto_increment' => true, 'comment' => 'ID message (primary key)'],
-            'content' => ['type' => 'TEXT', 'comment' => 'Isi pesan'],
+            'message' => ['type' => 'TEXT', 'comment' => 'Isi pesan'],
+            'file' => ['type' => 'VARCHAR', 'constraint' => 255, 'null' => true, 'comment' => 'Nama file'],
             'sender_id' => ['type' => 'INT', 'null' => false, 'comment' => 'ID pengirim (foreign key ke tabel users)'],
             'receiver_id' => ['type' => 'INT', 'null' => false, 'comment' => 'ID penerima (foreign key ke tabel users)'],
             'read_at' => ['type' => 'DATETIME', 'null' => true, 'comment' => 'Waktu pesan dibaca'],
@@ -96,7 +97,7 @@ class Initialtables extends Migration
         $this->forge->addKey('id', true);
         $this->forge->addForeignKey('sender_id', 'users', 'id', 'CASCADE', 'CASCADE');
         $this->forge->addForeignKey('receiver_id', 'users', 'id', 'CASCADE', 'CASCADE');
-        $this->forge->createTable('messages');
+        $this->forge->createTable('chats');
 
         // TABEL PROGRESS (mencatat progress THESIS sudah sampai STAGE mana)
         $this->forge->addField([
@@ -180,6 +181,8 @@ class Initialtables extends Migration
             'id' => ['type' => 'INT', 'auto_increment' => true, 'comment' => 'ID log (primary key)'],
             'user_id' => ['type' => 'INT', 'null' => false, 'comment' => 'ID user (foreign key ke tabel users)'],
             'ip_address' => ['type' => 'VARCHAR', 'constraint' => 45, 'null' => false, 'comment' => 'IP address'],
+            'user_agent' => ['type' => 'VARCHAR', 'constraint' => 100, 'null' => false, 'comment' => 'User Agent'],
+            'action' => ['type' => 'VARCHAR', 'constraint' => 50, 'null' => false, 'comment' => 'Action'],
             'description' => ['type' => 'TEXT', 'null' => true, 'comment' => 'Deskripsi log'],
             'created_at' => ['type' => 'DATETIME', 'null' => false, 'comment' => 'Waktu pembuatan catatan'],
         ]);
@@ -246,7 +249,7 @@ class Initialtables extends Migration
         $this->forge->dropTable('temporary_users');
         $this->forge->dropTable('announcements');
         $this->forge->dropTable('logs');
-        $this->forge->dropTable('messages');
+        $this->forge->dropTable('chats');
         $this->forge->dropTable('progress');
         $this->forge->dropTable('appointment_details');
         $this->forge->dropTable('appointments');

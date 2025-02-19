@@ -2,11 +2,11 @@
 
 namespace App\Controllers;
 
-use App\Models\UserModel;
-use App\Models\TemporaryUserModel;
+use App\Models\LogModel;
 use App\Models\MajorModel;
 use App\Models\SemesterModel;
-use App\Models\AppointmentModel;
+use App\Models\TemporaryUserModel;
+use App\Models\UserModel;
 use CodeIgniter\Controller;
 use CodeIgniter\I18n\Time;
 
@@ -14,11 +14,13 @@ class Auth extends Controller
 {
    protected $userModel;
    protected $session;
+   protected $logModel;
 
    public function __construct()
    {
       $this->userModel = new UserModel();
       $this->session = session();
+      $this->logModel = new LogModel();
    }
 
    public function login()
@@ -131,6 +133,7 @@ class Auth extends Controller
          'isLoggedIn' => true
       ]);
 
+      $this->logModel->logActivity(session()->get('user_id'), 'LOGIN', '');
       // **Redirect sesuai role utama**
       if ($currentUser['division'] == 'ADMIN') {
          return redirect()->to('admin');
@@ -226,6 +229,9 @@ class Auth extends Controller
          return redirect()->back()->withInput()->with('error', lang('App.invalidEmailFormat'));
       }
 
+
+
+
       // 2. Cek apakah email sudah ada di database
       $tum = new TemporaryUserModel();
       $um = new UserModel();
@@ -269,7 +275,11 @@ class Auth extends Controller
          'created_at' => Time::now()->format('Y-m-d H:i:s'),
          'expired_at' => Time::now()->addDays(1)->format('Y-m-d H:i:s')
       ];
-      $tum->insert($newTempUser);
+      $newID = $tum->addTemporaryUser($newTempUser);
+
+      if ($newID) {
+         $this->logModel->logActivity(null, 'REGISTER', 'ID=' . $newID . ' (Nama:' . $this->request->getPost('name') . ', Email:' . $email . ')');
+      }
 
       // Mahasiswa Langsung Terverifikasi (langsung simpan ke person dan user)
       $dataNewUser = [
@@ -295,7 +305,7 @@ class Auth extends Controller
       $sm = new SemesterModel();
 
       // Masukkan ke tabel users sebagai STUDENT
-      $newInsertID = $um->insert([
+      $newID = $um->insert([
          'name'         => $data['name'],
          'email'        => $data['email'],
          'password'     => $data['password'],
@@ -317,14 +327,14 @@ class Auth extends Controller
       $email = $this->request->getPost('email');
 
       // Cari user berdasarkan email di tabel persons
-      $person = $this->personModel->where('email', $email)->first();
+      $user = $this->userModel->where('email', $email)->first();
 
-      if (!$person) {
+      if (!$user) {
          return redirect()->back()->with('error', lang('App.emailNotFound'));
       }
 
       // Cari user yang terhubung dengan person_id
-      $user = $this->userModel->where('person_id', $person['id'])->first();
+      $user = $this->userModel->where('id', $user['id'])->first();
 
       if (!$user) {
          return redirect()->back()->with('error', lang('App.accountNotFound'));
@@ -336,6 +346,7 @@ class Auth extends Controller
          'token_expired_at' => date('Y-m-d H:i:s', strtotime('+1 hour'))
       ]);
       // Kirim email reset password (dummy untuk sekarang)
+      $this->logModel->logActivity(null, 'FORGET_PASSWORD', 'Email=' . $email);
       return redirect()->to('auth/login')->with('success', lang('App.checkEmailForResetPassword'));
    }
 
@@ -366,7 +377,7 @@ class Auth extends Controller
          'token' => null,
          'token_expired_at' => null
       ]);
-
+      $this->logModel->logActivity($user['id'], 'UPDATE_PASSWORD', 'New Password:' . $newPassword);
       return redirect()->to('auth/login')->with('success', lang('App.passwordSuccessfullyChanged'));
    }
 
@@ -390,6 +401,7 @@ class Auth extends Controller
 
    public function logout()
    {
+      $this->logModel->logActivity(session()->get('user_id'), 'LOGOUT', '');
       $this->session->destroy();
       return redirect()->to('auth/login')->with('success', lang('App.logoutSuccess'));
    }

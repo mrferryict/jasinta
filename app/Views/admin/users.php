@@ -22,7 +22,7 @@
             <div class="col-12">
                <div class="card">
                   <div class="card-body">
-                     <table id="usersTable" class="table table-striped table-bordered">
+                     <table id="mainTable" class="table table-striped table-bordered">
                         <thead>
                            <tr>
                               <th>Nama</th>
@@ -93,7 +93,7 @@
 
 <script>
    $(document).ready(function() {
-      $('#usersTable').DataTable({
+      $('#mainTable').DataTable({
          dom: "<'row'<'col-sm-12 col-md-4'l><'col-sm-12 col-md-4'B><'col-sm-12 col-md-4'f>>" +
             "<'row'<'col-sm-12'tr>>" +
             "<'row'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7'p>>",

@@ -19,14 +19,15 @@ class TemporaryUserModel extends Model
       'created_at',
       'expired_at'
    ];
-   protected $useTimestamps = true;
 
    /**
     * Tambahkan pendaftar baru ke tabel temporary_users
     */
    public function addTemporaryUser($data)
    {
-      return $this->insert($data);
+      $result = $this->insert($data);
+      dd($this->db->getLastQuery());
+      return $result;
    }
 
    /**
@@ -68,8 +69,6 @@ class TemporaryUserModel extends Model
          'token'        => null,
          'token_expired_at' => null,
          'verified_at'  => date('Y-m-d H:i:s'),
-         'created_at'   => date('Y-m-d H:i:s'),
-         'updated_at'   => date('Y-m-d H:i:s')
       ];
 
       // Insert data ke tabel users

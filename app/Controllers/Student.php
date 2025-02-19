@@ -3,53 +3,76 @@
 namespace App\Controllers;
 
 use CodeIgniter\Controller;
-use App\Models\StudentModel;
-use App\Models\ProgressModel;
+use CodeIgniter\I18n\Time;
+
 use App\Models\AnnouncementModel;
-use App\Models\MessageModel;
-use App\Models\RequirementModel;
+use App\Models\AppointmentModel;
+use App\Models\ChatModel;
+use App\Models\LogModel;
+use App\Models\MajorModel;
+use App\Models\ProgressModel;
+use App\Models\SemesterModel;
+use App\Models\SettingModel;
 use App\Models\StageModel;
-use App\Models\PersonModel;
+use App\Models\StudentModel;
 use App\Models\UserModel;
-use App\Models\ActivityLogModel;
+
 use Config\Services;
 
 class Student extends Controller
 {
-   protected $settings;
    protected $session;
-   protected $studentModel;
-   protected $progressModel;
+   protected $settings;
+
    protected $announcementModel;
-   protected $messageModel;
-   protected $requirementModel;
+   protected $appointmentModel;
+   protected $chatModel;
+   protected $logModel;
+   protected $majorModel;
+   protected $progressModel;
+   protected $semesterModel;
+   protected $settingModel;
    protected $stageModel;
+   protected $studentModel;
+   protected $userModel;
+
+   protected $currentUserID;
+   protected $data;
 
    public function __construct()
    {
-      $settingsService = Services::settingsService();
-      $this->settings = $settingsService->getSettingsAsArray();
-      $this->session = session();
-      $this->studentModel = new StudentModel();
-      $this->progressModel = new ProgressModel();
-      $this->announcementModel = new AnnouncementModel();
-      $this->messageModel = new MessageModel();
-      $this->requirementModel = new RequirementModel();
-      $this->stageModel = new StageModel();
-   }
+      $this->session          = session();
+      $this->settings         = Services::settingsService()->getSettingsAsArray();
 
+      $this->announcementModel = new AnnouncementModel();
+      $this->appointmentModel = new AppointmentModel();
+      $this->chatModel        = new ChatModel();
+      $this->logModel         = new LogModel();
+      $this->majorModel       = new MajorModel();
+      $this->progressModel    = new ProgressModel();
+      $this->semesterModel    = new SemesterModel();
+      $this->settingModel     = new SettingModel();
+      $this->stageModel       = new StageModel();
+      $this->studentModel     = new StudentModel();
+      $this->userModel        = new UserModel();
+
+      $this->currentUserID    = session()->get('user_id');
+      $sendersList = $this->chatModel->getChatSendersWithUnreadCount($this->currentUserID);
+      $this->data = [
+         'settings'     => $this->settings,
+         'sessions'     => $this->session,
+         'sendersList'  => $sendersList,
+         'student'      => $this->studentModel->getStudentDetails($this->session->get('user_id')),
+      ];
+   }
+   //
+   // FITUR DASHBOARD
+   //
    public function index()
    {
-      $stageModel = new \App\Models\StageModel();
+      $currentStage = $this->progressModel->getStudentStage($this->session->get('user_id'));
 
-      $studentId = $this->session->get('user_id');
-
-      // Get student data
-      $studentData = $this->studentModel->getStudentDetails($studentId);
-      $currentStage = $this->progressModel->getStudentStage($studentId);
-
-
-      $stages = $stageModel->findAll(); // Ambil semua data stages
+      $stages = $this->stageModel->findAll(); // Ambil semua data stages
       $deadlines = [];
       foreach ($stages as $stage) {
          $deadlines[$stage['name']] = $stage['deadline_at']; // Simpan deadline_at dengan key nama stage
@@ -60,26 +83,27 @@ class Student extends Controller
       // Get announcements
       $announcements = $this->announcementModel->orderBy('created_at', 'DESC')->findAll();
 
-      $data = [
-         'student' => $studentData,
+      $dataView = $this->data + [
          'announcements' => $announcements,
-         'settings' => $this->settings,
-         'sessions' => $this->session,
-         'infoBoxes' => [
-            'currentStage' => $currentStage['name'] ?? 'PENDAFTARAN',
-            'remainingDaysLeft' => $remainingDays,
+         'settings'     => $this->settings,
+         'sessions'     => $this->session,
+         'infoBoxes'    => [
+            'currentStage'       => $currentStage['name'],
+            'remainingDaysLeft'  => $remainingDays,
          ],
          'pageTitle' => 'DASHBOARD',
-
       ];
-
-      return view('student/dashboard', $data);
+      $this->logModel->logActivity($this->currentUserID, 'VIEW', lang('App.dashboard'));
+      return view('student/dashboard', $dataView);
    }
 
+   //
+   // REGISTRATION
+   //
    public function registration()
    {
       // Ambil data mahasiswa yang sedang login
-      $studentId = session()->get('user_id');
+      $studentId = $this->currentUserID;
 
       if (!$studentId) {
          return redirect()->to('/auth/login')->with('error', 'Silakan login terlebih dahulu.');
@@ -102,17 +126,112 @@ class Student extends Controller
       $student['student_status'] = ($student['verified_at'] !== null) ? 'ACTIVE' : 'INACTIVE';
 
       // Ambil pengumuman untuk mahasiswa
-      $announcements = $this->announcementModel
-         ->orderBy('created_at', 'DESC')
-         ->findAll();
+      $announcements = $this->announcementModel->orderBy('created_at', 'DESC')->findAll();
 
       // Kirim data ke view
+      $this->logModel->logActivity($this->currentUserID, 'VIEW', lang('App.registration'));
       return view('student/registration', [
          'pageTitle'     => 'Pendaftaran Mahasiswa',
          'student'       => $student,
          'announcements' => $announcements
       ]);
    }
+
+   //
+   // FITUR CHAT
+   //
+   public function chat($userId = null)
+   {
+      // ✅ Ambil daftar pengirim (semua yang pernah chat dengan admin)
+      $chatModel = new ChatModel();
+      $contacts = $chatModel->getChatContacts($this->currentUserID);
+
+      // ✅ Jika tidak ada kontak sama sekali, cari ADMIN pertama
+      if (empty($contacts)) {
+         $admin = $this->userModel->where('division', 'ADMIN')->first();
+         if ($admin) {
+            $contacts[] = [
+               'id' => $admin['id'],
+               'name' => $admin['name'],
+               'last_message' => 'Mulai chat dengan admin',
+               'last_message_time' => null,
+               'unread_chats' => 0
+            ];
+         }
+      }
+
+      // ✅ Jika tidak ada userId yang dipilih, gunakan user pertama dari daftar kontak
+      if (!$userId && !empty($contacts)) {
+         $userId = $contacts[0]['id'];
+      }
+
+      // ✅ Pastikan $userId valid sebelum mencari data pengguna
+      $receiver = $this->userModel->find($userId);
+      if (!$receiver) {
+         return redirect()->back()->with('error', 'User tidak ditemukan.');
+      }
+
+      // ✅ Ambil isi percakapan antara admin dan user
+      $messages = $chatModel->getMessages($this->currentUserID, $userId);
+
+      // ✅ Tandai semua pesan sebagai telah dibaca
+      $chatModel->markMessagesAsRead($this->currentUserID, $userId);
+
+      $dataView = $this->data + [
+         'pageTitle' => 'Chat dengan ' . esc($receiver['name']),
+         'activeMenu' => '',
+         'contacts' => $contacts,
+         'receiver' => $receiver,
+         'messages' => $messages,
+         'activeChatId' => $userId,
+         'currentUserID' => $this->currentUserID,
+      ];
+
+      return view('student/chat', $dataView);
+   }
+
+
+   public function sendMessage($to = '')
+   {
+      $admin = $this->userModel->where('division', 'ADMIN')->first(); // Cari ADMIN
+
+      if (!$admin) {
+         return $this->response->setJSON(['error' => 'Admin not found'])->setStatusCode(500);
+      }
+
+      $message = $this->request->getPost('message');
+      $file = $this->request->getFile('file');
+      $fileName = null;
+
+      // ✅ Validasi apakah ada file yang diunggah
+      if ($file && $file->isValid() && !$file->hasMoved()) {
+         $validTypes = ['image/png', 'image/jpeg', 'application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'];
+
+         if (!in_array($file->getMimeType(), $validTypes)) {
+            return $this->response->setJSON(['error' => 'Format file tidak diperbolehkan.'])->setStatusCode(400);
+         }
+
+         $fileName = $file->getRandomName();
+         $file->move('uploads/chat/', $fileName);
+      }
+
+      // ✅ Pastikan minimal ada pesan atau file
+      if (!$message && !$fileName) {
+         return $this->response->setJSON(['error' => 'Pesan atau file harus diisi'])->setStatusCode(400);
+      }
+
+      // Simpan ke database
+      $this->chatModel->insert([
+         'sender_id' => $this->currentUserID,
+         'receiver_id' => $admin['id'],
+         'message' => $message,
+         'file' => $fileName,
+         'created_at' => Time::now()
+      ]);
+
+      return $this->response->setJSON(['success' => true]);
+   }
+
 
    public function mentoringRegistration()
    {
@@ -138,78 +257,5 @@ class Student extends Controller
       ];
 
       return view('student/proposal_requirements', $data);
-   }
-
-   public function sendMessage()
-   {
-      $senderId = $this->session->get('user_id');
-      $receiverId = $this->request->getPost('receiver_id');
-      $content = $this->request->getPost('content');
-
-      if (!$receiverId || empty($content)) {
-         return redirect()->back()->with('error', 'Message cannot be empty');
-      }
-
-      $this->messageModel->insert([
-         'sender_id' => $senderId,
-         'receiver_id' => $receiverId,
-         'content' => $content,
-         'created_at' => date('Y-m-d H:i:s'),
-         'read_at' => null // Pesan baru, jadi belum terbaca
-      ]);
-
-      return redirect()->to("student/chat/$receiverId");
-   }
-
-
-   public function chat($withWho)
-   {
-      $messageModel = new \App\Models\MessageModel();
-      $personModel = new \App\Models\PersonModel();
-
-      // Pastikan user sudah login
-      if (!$this->session->has('user_id')) {
-         return redirect()->to('/login')->with('error', 'You need to login first!');
-      }
-
-      // Ambil ID user yang sedang login
-      $userId = $this->session->get('user_id');
-
-      // Tentukan receiver_id berdasarkan $withWho
-      if ($withWho === 'admin') {
-         // Cari administrator yang aktif (misalnya dengan ID 1 atau kriteria tertentu)
-         $receiver = $personModel->where('division', 'ADMINISTRATOR')->first();
-      } elseif ($withWho === 'lecturer') {
-         // Ambil dosen pembimbing mahasiswa ini dari appointment
-         $appointmentModel = new \App\Models\AppointmentModel();
-         $receiver = $appointmentModel->getLecturerByStudent($userId);
-      } else {
-         return redirect()->back()->with('error', 'Invalid chat recipient!');
-      }
-
-      if (!$receiver) {
-         return redirect()->back()->with('error', 'Recipient not found!');
-      }
-
-      // Ambil pesan antara mahasiswa dan penerima
-      $messages = $messageModel
-         ->where('(sender_id = ' . $userId . ' AND receiver_id = ' . $receiver['id'] . ')')
-         ->orWhere('(sender_id = ' . $receiver['id'] . ' AND receiver_id = ' . $userId . ')')
-         ->orderBy('created_at', 'ASC')
-         ->findAll();
-
-      // Tandai pesan yang diterima sebagai sudah dibaca
-      $messageModel->where('receiver_id', $userId)
-         ->where('sender_id', $receiver['id'])
-         ->where('read_at', null)
-         ->set(['read_at' => date('Y-m-d H:i:s')])
-         ->update();
-
-      // Load view chat
-      return view('student/chat', [
-         'receiver' => $receiver,
-         'messages' => $messages,
-         'withWho' => $withWho
-      ]);
    }
 }

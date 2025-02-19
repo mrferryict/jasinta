@@ -80,4 +80,13 @@ return [
    'newUser' => 'Pengguna baru',
    'createUser' => 'Membuat Pengguna Baru',
    'createNewUser' => 'Membuat Pengguna Baru',
+   'noData' => 'Belum ada data',
+   'saveNewUser' => 'Menyimpan Pengguna Baru',
+   'nimAndMajorMismatch' => 'NIM tidak sesuai dengan jurusan yang dipilih',
+   'newUserSuccessfullyAdded' => 'Pengguna baru berhasil ditambahkan',
+   'dashboard' => 'Beranda',
+   'askAdmin' => 'Tanya Admin',
+   'send' => 'Kirim',
+   'chooseFile' => 'Pilih berkas',
+   'attachment' => 'lampiran',
 ];
