@@ -6,7 +6,7 @@ use CodeIgniter\Model;
 
 class ThesisModel extends Model
 {
-   protected $table = 'thesis';
+   protected $table = 'theses';
    protected $primaryKey = 'id';
    protected $allowedFields = ['title', 'student_id', 'created_at', 'updated_at'];
    protected $useTimestamps = true;

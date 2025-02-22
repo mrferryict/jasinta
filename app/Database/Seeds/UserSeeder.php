@@ -13,11 +13,9 @@ class UserSeeder extends Seeder
 
         // Contoh Data Persons (Mahasiswa, Dosen, Administrator)
         $users = [
-            ['STUDENT', 'student@student.com', '23560001', 'STUDENT', 2, 1],
-            ['ADMIN', 'admin@admin.com', '00000000', 'ADMIN', null, null],
-            ['LECTURER', 'lecturer@lecturer.com', '12345678', 'LECTURER', null, null],
-            ['Thomas Budiman', 'thomas@stmik.com', '10000001', 'LECTURER', null, null],
-            ['Akmal Budi Yulianto', 'akmal@stmik.com', '10000002', 'LECTURER', null, null],
+            ['STUDENT', 'student@student.com', '33333333', 'STUDENT', 2, 1],
+            ['ADMIN', 'admin@admin.com', '11111111', 'ADMIN', null, null],
+            ['LECTURER', 'lecturer@lecturer.com', '22222222', 'LECTURER', null, null],
             ['Chandra Setiawan', 'chandra@stmik.com', '23570001', 'STUDENT', 1, 1],
             ['Dede Yusuf', 'dede@stmik.com', '23560002', 'STUDENT', 2, 1],
             ['Eko Purnomo', 'eko@stmik.com', '23360003', 'STUDENT', 3, 1],

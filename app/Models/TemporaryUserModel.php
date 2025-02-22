@@ -26,7 +26,6 @@ class TemporaryUserModel extends Model
    public function addTemporaryUser($data)
    {
       $result = $this->insert($data);
-      dd($this->db->getLastQuery());
       return $result;
    }
 

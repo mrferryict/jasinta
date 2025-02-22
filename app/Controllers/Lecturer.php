@@ -3,39 +3,54 @@
 namespace App\Controllers;
 
 use CodeIgniter\Controller;
-use App\Models\PersonModel;
+
+use App\Models\AnnouncementModel;
+use App\Models\AssignmentModel;
+use App\Models\ChatModel;
+use App\Models\LogModel;
 use App\Models\ThesisModel;
-use App\Models\AppointmentModel;
-use App\Models\MessageModel;
-use App\Models\ProgressModel;
 use App\Models\StageModel;
 use App\Models\UserModel;
-use App\Models\AnnouncementModel;
-use App\Models\ActivityLogModel;
+
 use Config\Services;
 
 class Lecturer extends Controller
 {
-   protected $settings;
    protected $session;
-   protected $personModel;
+   protected $settings;
+
+   protected $announcementModel;
+   protected $assignmentModel;
+   protected $chatModel;
    protected $thesisModel;
-   protected $appointmentModel;
-   protected $messageModel;
-   protected $progressModel;
+   protected $logModel;
    protected $stageModel;
+   protected $userModel;
+
+   protected $data;
+
+   protected $currentUserId;
 
    public function __construct()
    {
-      $settingsService = Services::settingsService();
-      $this->settings = $settingsService->getSettingsAsArray();
       $this->session = session();
-      $this->personModel = new PersonModel();
+      $this->settings = Services::settingsService()->getSettingsAsArray();
+
+      $this->announcementModel = new AnnouncementModel();
+      $this->assignmentModel = new AssignmentModel();
+      $this->chatModel = new ChatModel();
+      $this->thesisModel = new LogModel();
       $this->thesisModel = new ThesisModel();
-      $this->appointmentModel = new AppointmentModel();
-      $this->messageModel = new MessageModel();
-      $this->progressModel = new ProgressModel();
       $this->stageModel = new StageModel();
+      $this->userModel = new UserModel();
+
+      $this->currentUserId    = (int)session()->get('user_id');
+      $sendersList = $this->chatModel->getChatSendersWithUnreadCount($this->currentUserId);
+      $this->data = [
+         'settings'     => $this->settings,
+         'sessions'     => $this->session,
+         'sendersList'  => $sendersList,
+      ];
    }
 
    /**
@@ -43,27 +58,25 @@ class Lecturer extends Controller
     */
    public function index()
    {
-      $lecturerId = $this->session->get('user_id');
+      $lecturerId = session()->get('user_id');
 
       // Get supervised students
-      $supervisedStudents = $this->appointmentModel->getSupervisedStudents($lecturerId);
+      $supervisedStudents = $this->assignmentModel->getSupervisedStudents($lecturerId);
 
       // Get assigned examinations
-      $examinedStudents = $this->appointmentModel->getExaminedStudents($lecturerId);
+      $examinedStudents = $this->assignmentModel->getExaminedStudents($lecturerId);
 
-      $data = [
+      $dataView = $this->data + [
+         'pageTitle' => 'DASHBOARD DOSEN',
          'supervisedStudents' => $supervisedStudents,
          'examinedStudents' => $examinedStudents,
-         'settings' => $this->settings,
-         'sessions' => $this->session,
          'infoBoxes' => [
             'currentStage' => 'kosong',
             'remainingDaysLeft' => 'kosong',
          ],
-         'pageTitle' => 'DASHBOARD DOSEN',
       ];
 
-      return view('lecturer/dashboard', $data);
+      return view('lecturer/dashboard', $dataView);
    }
 
    /**
@@ -98,23 +111,52 @@ class Lecturer extends Controller
       return view('lecturer/examination', $data);
    }
 
-   /**
-    * Chat with a student
-    */
-   public function chat($studentId)
+   //
+   // FITUR CHAT
+   //
+
+   public function chat($userId = null)
    {
-      $lecturerId = $this->session->get('user_id');
+      $chatModel = new ChatModel();
+      $session = session();
 
-      // Fetch chat messages between lecturer and student
-      $messages = $this->messageModel->getChatMessages($lecturerId, $studentId);
+      // ✅ Ambil daftar pengirim (semua yang pernah chat dengan admin)
+      $contacts = $chatModel->getChatContacts($this->currentUserId);
 
-      $data = [
+      // ✅ Jika tidak ada userId yang dipilih, tampilkan user pertama dari daftar kontak
+      if (!$userId && !empty($contacts)) {
+         $userId = $contacts[0]['id'];
+      }
+
+      // ✅ Ambil data user yang sedang di-chat
+      $receiver = $this->userModel->find($userId);
+
+      if (!$receiver) {
+         return redirect()->back()->with('error', 'User tidak ditemukan.');
+      }
+
+      // ✅ Ambil isi percakapan antara admin dan user
+      $messages = $chatModel->getMessages($this->currentUserId, $userId);
+
+      // ✅ Tandai semua pesan sebagai telah dibaca
+      $chatModel->markMessagesAsRead($this->currentUserId, $userId);
+
+      // ✅ Simpan userId terakhir yang di-chat di session
+      $lastOpenedChat = $session->get('lastOpenedChat');
+      if ($lastOpenedChat != $userId) {
+         $this->logModel->logActivity($this->currentUserId, 'OPEN_CHATS', 'to: ' . $receiver['name']);
+         $session->set('lastOpenedChat', $userId); // Simpan ID user terakhir
+      }
+      $dataView = $this->data + [
+         'pageTitle' => 'Chat',
+         'activeMenu' => '',
+         'contacts' => $contacts,
+         'receiver' => $receiver,
          'messages' => $messages,
-         'studentId' => $studentId,
-         'pageTitle' => 'Chat with Student',
+         'activeChatId' => $userId,
+         'currentUserId' => $this->currentUserId,
       ];
-
-      return view('lecturer/chat', $data);
+      return view('admin/chat', $dataView);
    }
 
    /**

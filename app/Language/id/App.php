@@ -89,4 +89,9 @@ return [
    'send' => 'Kirim',
    'chooseFile' => 'Pilih berkas',
    'attachment' => 'lampiran',
+   'ass' => '@',
+   'EXAMINER_CHIEF' => 'Dosen Penguji (Ketua)',
+   'EXAMINER_MEMBER' => 'Dosen Penguji (Anggota)',
+   'MATERIAL_SUPERVISOR' => 'Dosen Pembimbing (Materi)',
+   'TECHNICAL_SUPERVISOR' => 'Dosen Pembimbing (Teknis)',
 ];

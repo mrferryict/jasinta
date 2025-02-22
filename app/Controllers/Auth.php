@@ -2,25 +2,41 @@
 
 namespace App\Controllers;
 
-use App\Models\LogModel;
-use App\Models\MajorModel;
-use App\Models\SemesterModel;
-use App\Models\TemporaryUserModel;
-use App\Models\UserModel;
 use CodeIgniter\Controller;
 use CodeIgniter\I18n\Time;
 
+use App\Models\AssignmentModel;
+use App\Models\LogModel;
+use App\Models\MajorModel;
+use App\Models\SemesterModel;
+use App\Models\StudentModel;
+use App\Models\TemporaryUserModel;
+use App\Models\UserModel;
+
+
 class Auth extends Controller
 {
-   protected $userModel;
    protected $session;
+
+   protected $assignmentModel;
    protected $logModel;
+   protected $majorModel;
+   protected $semesterModel;
+   protected $studentModel;
+   protected $temporaryUserModel;
+   protected $userModel;
 
    public function __construct()
    {
-      $this->userModel = new UserModel();
       $this->session = session();
+
+      $this->assignmentModel = new AssignmentModel();
       $this->logModel = new LogModel();
+      $this->majorModel = new MajorModel();
+      $this->semesterModel = new SemesterModel();
+      $this->studentModel = new StudentModel();
+      $this->temporaryUserModel = new TemporaryUserModel();
+      $this->userModel = new UserModel();
    }
 
    public function login()
@@ -38,29 +54,9 @@ class Auth extends Controller
 
       if (strtolower($this->request->getMethod()) === 'get') {
          helper('captcha');
-         // **Generate CAPTCHA**
-         $captchaConfig = [
-            'word'       => substr(bin2hex(random_bytes(3)), 0, 6), // String acak aman
-            'img_path'   => WRITEPATH . 'captcha/',
-            'img_url'    => base_url('writable/captcha/'),
-            'font_path'  => '',
-            'img_width'  => 150,
-            'img_height' => 50,
-            'expiration' => 300,
-            'word_length' => 6,
-            'pool'       => '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ',
-            'colors'     => [
-               'background' => [255, 255, 255],
-               'border' => [255, 255, 255],
-               'text' => [0, 0, 0],
-               'grid' => [255, 40, 40]
-            ]
-         ];
-
-         $captcha = generate_captcha($captchaConfig);
-         session()->set('captcha_text', $captcha['word']);
-
-         return view('auth/login', ['captcha' => $captcha]);
+         $captchaImage = generate_captcha();
+         $captchaURL = str_replace('/public', '', base_url()) . 'writable/captcha/' . $captchaImage;
+         return view('auth/login', ['captcha_url' => $captchaURL]);
       }
 
       $email = $this->request->getPost('email');
@@ -95,6 +91,9 @@ class Auth extends Controller
          return redirect()->back()->withInput()->with('error', lang('App.captchaMismatched'));
       }
 
+      // Hapus file CAPTCHA setelah validasi
+      clean_expired_captcha();
+
       // Cek apakah email terdaftar atas user tertentu
       $currentUser = $this->userModel
          ->select('*')
@@ -111,23 +110,19 @@ class Auth extends Controller
 
       // Jika currentUser adalah LECTURER, cek apakah dia punya SK aktif
       if ($currentUser['division'] == 'LECTURER') {
-         $appointmentModel = new \App\Models\AppointmentModel();
-         $activeAppointments = $appointmentModel->getActiveAppointments($currentUser['id']);
-
-         $this->session->set(['appointments' => $activeAppointments]);
+         $activeAssignments = $this->assignmentModel->getLecturerStudents($currentUser['id']);
+         $this->session->set(['assignments' => $activeAssignments]);
       }
 
       // Jika current$currentUser adalah STUDENT, cek tahapan terakhirnya
       if ($currentUser['division'] == 'STUDENT') {
-         $progressModel = new \App\Models\ProgressModel();
-         $studentStage = $progressModel->getStudentStage($currentUser['id']);
-
+         $studentStage = $this->studentModel->getStudentStage($currentUser['id']);
          $this->session->set(['student_stage' => $studentStage['name'] ?? 'PENDAFTARAN']);
       }
 
       // Simpan data dalam session
       $this->session->set([
-         'user_id'   => $currentUser['id'],
+         'user_id'   => (int) $currentUser['id'],
          'name'      => $currentUser['name'],
          'division'  => $currentUser['division'],
          'isLoggedIn' => true
@@ -151,20 +146,9 @@ class Auth extends Controller
    {
       if (strtolower($this->request->getMethod()) === 'get') {
          helper('captcha');
-         // **Generate CAPTCHA**
-         $captchaConfig = [
-            'word'       => bin2hex(random_bytes(3)), // Alternatif untuk random_string()
-            'img_path'   => FCPATH . 'captcha/',  // Simpan di folder 'public/captcha/'
-            'img_url'    => base_url('captcha/'), // URL yang bisa diakses oleh browser
-            'font_path'  => '',
-            'img_width'  => 150,
-            'img_height' => 50,
-            'expiration' => 300
-         ];
-         $captcha = generate_captcha($captchaConfig);
-         session()->set('captcha_text', $captcha['word']);
-
-         return view('auth/register', ['captcha' => $captcha]);
+         $captchaImage = generate_captcha();
+         $captchaURL = str_replace('/public', '', base_url()) . 'writable/captcha/' . $captchaImage;
+         return view('auth/register', ['captcha_url' => $captchaURL]);
       }
 
       helper('app');
@@ -220,23 +204,27 @@ class Auth extends Controller
          return redirect()->back()->withInput()->with('error', $validation->getErrors());
       }
 
-      $email         = $this->request->getPost('email');
-      $nim           = $this->request->getPost('nim');
-      $is_repeating  = (int)$this->request->getPost('is_repeating');
+      // Hapus file CAPTCHA setelah validasi
+      $captchaPath = WRITEPATH . 'captcha/';
+      $captchaFiles = glob($captchaPath . '*');
+      foreach ($captchaFiles as $file) {
+         if (is_file($file)) {
+            unlink($file);
+         }
+      }
+
+      $email = $this->request->getPost('email');
+      $nim = $this->request->getPost('nim');
+      $is_repeating = (int)$this->request->getPost('is_repeating');
 
       // 1. Validasi format email
       if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
          return redirect()->back()->withInput()->with('error', lang('App.invalidEmailFormat'));
       }
 
-
-
-
       // 2. Cek apakah email sudah ada di database
-      $tum = new TemporaryUserModel();
-      $um = new UserModel();
-      $emailExistsInTemporaryUsers = $tum->where('email', $email)->first();
-      $emailExistsInUsers = $um->where('email', $email)->first();
+      $emailExistsInTemporaryUsers = $this->temporaryUserModel->where('email', $email)->first();
+      $emailExistsInUsers = $this->userModel->where('email', $email)->first();
 
       if ($emailExistsInTemporaryUsers || $emailExistsInUsers) {
          return redirect()->back()->withInput()->with('error', lang('App.emailAlreadyExist'));
@@ -251,12 +239,12 @@ class Auth extends Controller
       if (is_null($major)) {
          return redirect()->back()->withInput()->with('error', lang('App.invalidNIM'));
       } else {
-         $majorModel = new MajorModel();
-         $majorID = (int) $majorModel->getMajorIDByName($major);
+         $majorID = (int) $this->majorModel->getMajorIDByName($major);
       }
 
       // 4. Cek apakah NIM sudah ada di database
-      $nimExists = $tum->where('nim', $nim)->first() || $um->where('number', $nim)->first();
+      $nimExists = $this->temporaryUserModel->where('nim', $nim)->first() ||
+         $this->userModel->where('number', $nim)->first();
 
       if ($nimExists) {
          return redirect()->back()->withInput()->with('error', lang('App.nimAlreadyExist'));
@@ -275,7 +263,7 @@ class Auth extends Controller
          'created_at' => Time::now()->format('Y-m-d H:i:s'),
          'expired_at' => Time::now()->addDays(1)->format('Y-m-d H:i:s')
       ];
-      $newID = $tum->addTemporaryUser($newTempUser);
+      $newID = $this->temporaryUserModel->addTemporaryUser($newTempUser);
 
       if ($newID) {
          $this->logModel->logActivity(null, 'REGISTER', 'ID=' . $newID . ' (Nama:' . $this->request->getPost('name') . ', Email:' . $email . ')');
@@ -301,18 +289,15 @@ class Auth extends Controller
     */
    private function activateUserImmediately($data)
    {
-      $um = new UserModel();
-      $sm = new SemesterModel();
-
       // Masukkan ke tabel users sebagai STUDENT
-      $newID = $um->insert([
+      return $this->userModel->insert([
          'name'         => $data['name'],
          'email'        => $data['email'],
          'password'     => $data['password'],
          'number'       => $data['nim'],
          'division'     => 'STUDENT',
          'major_id'     => $data['major_id'],
-         'semester'     => $sm->getActiveSemester(),
+         'semester'     => $this->semesterModel->getActiveSemesterId(),
          'is_repeating' => $data['is_repeating'],
          'verified_at'  => date('Y-m-d H:i:s'),  // seolah langsung diverifikasi oleh ADMIN
       ]);

@@ -21,6 +21,16 @@ class SemesterModel extends Model
       return $this->where('status', 1)->findAll();
    }
 
+   // ambil ID dari semester yang sedang aktif
+   public function getActiveSemesterId()
+   {
+      $activeSemester = $this->where('status', 1)->first();
+      if ($activeSemester) {
+         return $activeSemester['id'];
+      }
+      return null;
+   }
+
    /**
     * Set semester aktif, dan menonaktifkan semester lainnya.
     */

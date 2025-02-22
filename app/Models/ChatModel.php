@@ -18,7 +18,7 @@ class ChatModel extends Model
          ->findAll();
    }
 
-   public function getChatSendersWithUnreadCount($userID)
+   public function getChatSendersWithUnreadCount(int $userID)
    {
       return $this->select('users.id, users.name, users.email,
                           COUNT(chats.id) AS total_messages,
@@ -59,14 +59,14 @@ class ChatModel extends Model
 
    public function getMessages($id1, $id2)
    {
-      if (!$id2) {
+      if ($id2) {
          return $this->where("(sender_id = $id1 AND receiver_id = $id2)")
             ->orWhere("(sender_id = $id2 AND receiver_id = $id1)")
             ->orderBy('created_at', 'ASC')
             ->findAll();
       }
-      return $this->where("(sender_id = $id1 AND receiver_id = $id2)")
-         ->orWhere("(sender_id = $id2 AND receiver_id = $id1)")
+      return $this->where("sender_id = $id1")
+         ->orWhere("receiver_id = $id1")
          ->orderBy('created_at', 'ASC')
          ->findAll();
    }

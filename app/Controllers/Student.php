@@ -6,11 +6,10 @@ use CodeIgniter\Controller;
 use CodeIgniter\I18n\Time;
 
 use App\Models\AnnouncementModel;
-use App\Models\AppointmentModel;
+use App\Models\AssignmentModel;
 use App\Models\ChatModel;
 use App\Models\LogModel;
 use App\Models\MajorModel;
-use App\Models\ProgressModel;
 use App\Models\SemesterModel;
 use App\Models\SettingModel;
 use App\Models\StageModel;
@@ -25,11 +24,10 @@ class Student extends Controller
    protected $settings;
 
    protected $announcementModel;
-   protected $appointmentModel;
+   protected $assignmentModel;
    protected $chatModel;
    protected $logModel;
    protected $majorModel;
-   protected $progressModel;
    protected $semesterModel;
    protected $settingModel;
    protected $stageModel;
@@ -45,11 +43,10 @@ class Student extends Controller
       $this->settings         = Services::settingsService()->getSettingsAsArray();
 
       $this->announcementModel = new AnnouncementModel();
-      $this->appointmentModel = new AppointmentModel();
+      $this->assignmentModel  = new AssignmentModel();
       $this->chatModel        = new ChatModel();
       $this->logModel         = new LogModel();
       $this->majorModel       = new MajorModel();
-      $this->progressModel    = new ProgressModel();
       $this->semesterModel    = new SemesterModel();
       $this->settingModel     = new SettingModel();
       $this->stageModel       = new StageModel();
@@ -70,7 +67,7 @@ class Student extends Controller
    //
    public function index()
    {
-      $currentStage = $this->progressModel->getStudentStage($this->session->get('user_id'));
+      $currentStage = $this->studentModel->getStudentStage($this->session->get('user_id'));
 
       $stages = $this->stageModel->findAll(); // Ambil semua data stages
       $deadlines = [];
@@ -88,7 +85,7 @@ class Student extends Controller
          'settings'     => $this->settings,
          'sessions'     => $this->session,
          'infoBoxes'    => [
-            'currentStage'       => $currentStage['name'],
+            'currentStage'       => $currentStage ? $currentStage['name'] : 'PENDAFTARAN',
             'remainingDaysLeft'  => $remainingDays,
          ],
          'pageTitle' => 'DASHBOARD',

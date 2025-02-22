@@ -90,5 +90,5 @@ class Autoload extends AutoloadConfig
      *
      * @var list<string>
      */
-    public $helpers = ['template', 'lang', 'form'];
+    public $helpers = ['template', 'lang', 'form', 'captcha'];
 }

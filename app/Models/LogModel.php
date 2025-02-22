@@ -15,14 +15,17 @@ class LogModel extends Model
     */
    public function logActivity($userId, $action, $description)
    {
-      $this->insert([
-         'user_id'     => $userId,
-         'action'      => $action,
-         'description' => $description,
-         'ip_address'  => $_SERVER['REMOTE_ADDR'],
-         'user_agent'  => $_SERVER['HTTP_USER_AGENT'],
-         'created_at'  => date('Y-m-d H:i:s')
-      ]);
+      if (!$userId) {
+         $this->insert([
+            'user_id'     => $userId,
+            'action'      => $action,
+            'description' => $description,
+            'ip_address'  => $_SERVER['REMOTE_ADDR'],
+            'user_agent'  => $_SERVER['HTTP_USER_AGENT'],
+            'created_at'  => date('Y-m-d H:i:s')
+         ]);
+      }
+      return null;
    }
 
    public function getAllLogs()

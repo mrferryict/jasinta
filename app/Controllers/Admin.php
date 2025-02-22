@@ -9,10 +9,10 @@ use App\Models\AnnouncementModel;
 use App\Models\ChatModel;
 use App\Models\LogModel;
 use App\Models\MajorModel;
-use App\Models\ProgressModel;
 use App\Models\SemesterModel;
 use App\Models\SettingModel;
 use App\Models\StageModel;
+use App\Models\StudentModel;
 use App\Models\UserModel;
 
 use Config\Services;
@@ -26,13 +26,13 @@ class Admin extends Controller
    protected $chatModel;
    protected $logModel;
    protected $majorModel;
-   protected $progressModel;
    protected $semesterModel;
    protected $settingModel;
    protected $stageModel;
+   protected $studentModel;
    protected $userModel;
 
-   protected $currentUserID;
+   protected $currentUserId;
    protected $data;
 
    public function __construct()
@@ -44,14 +44,14 @@ class Admin extends Controller
       $this->chatModel        = new ChatModel();
       $this->logModel         = new LogModel();
       $this->majorModel       = new MajorModel();
-      $this->progressModel    = new ProgressModel();
       $this->semesterModel    = new SemesterModel();
       $this->settingModel     = new SettingModel();
       $this->stageModel       = new StageModel();
+      $this->studentModel     = new StudentModel();
       $this->userModel        = new UserModel();
 
-      $this->currentUserID    = session()->get('user_id');
-      $sendersList = $this->chatModel->getChatSendersWithUnreadCount($this->currentUserID);
+      $this->currentUserId    = (int)session()->get('user_id');
+      $sendersList = $this->chatModel->getChatSendersWithUnreadCount($this->currentUserId);
       $this->data = [
          'settings'     => $this->settings,
          'sessions'     => $this->session,
@@ -66,7 +66,7 @@ class Admin extends Controller
    {
 
       // **1. TOTAL MAHASISWA PESERTA**
-      $totalStudents = $this->progressModel->countAll();
+      $totalStudents = $this->studentModel->countActiveStudents();
 
       // **2. AMBIL DEADLINE TIAP TAHAPAN DARI TABEL STAGES**
       $stages = $this->stageModel->findAll(); // Ambil semua data stages
@@ -76,7 +76,7 @@ class Admin extends Controller
       }
 
       // **3. AMBIL DATA MAHASISWA & HITUNG MAHASISWA ON-TRACK**
-      $students = $this->progressModel->getStudentProgress();
+      $students = $this->studentModel->getStudentProgress();
       $studentsOnTrack = 0;
 
       foreach ($students as $student) {
@@ -103,11 +103,11 @@ class Admin extends Controller
          ],
          'pageTitle' => 'DASHBOARD',
          'tableTitle' => lang('App.monitoringTheStagesOfStudents'),
-         'students' => $this->progressModel->getStudentProgress(),
-         'deadlines' => $deadlines, // Menggunakan deadlines dari stages
-         'stages' => array_column($this->stageModel->orderBy('id', 'ASC')->findAll(), 'name'),
+         'students' => $students,
+         'deadlines' => $deadlines,
+         'stages' => $this->stageModel->getStageNames(),
       ];
-      $this->logModel->logActivity($this->currentUserID, 'VIEW', lang('App.dashboard'));
+      $this->logModel->logActivity($this->currentUserId, 'VIEW', lang('App.dashboard'));
       return view('admin/dashboard', $dataView);
    }
 
@@ -123,7 +123,7 @@ class Admin extends Controller
          'activeMenu' => 'users',
          'users' => $userModel->getAllUsers()
       ];
-      $this->logModel->logActivity($this->currentUserID, 'VIEW', lang('App.users'));
+      $this->logModel->logActivity($this->currentUserId, 'VIEW', lang('App.users'));
       return view('admin/users', $dataView);
    }
 
@@ -138,7 +138,7 @@ class Admin extends Controller
          'majors' => $this->majorModel->getAllMajors(),
          'semesters' => $semesterModel->getActiveSemesters(),
       ];
-      $this->logModel->logActivity($this->currentUserID, 'VIEW', lang('App.createUser'));
+      $this->logModel->logActivity($this->currentUserId, 'VIEW', lang('App.createUser'));
       return view('admin/create_user', $dataView);
    }
 
@@ -192,7 +192,7 @@ class Admin extends Controller
       $postData['password'] = password_hash($postData['password'], PASSWORD_DEFAULT);
       $postData['verified_at'] = date('Y-m-d H:i:s');
       $newID = $this->userModel->insert($postData);
-      $this->logModel->logActivity($this->currentUserID, 'CREATE', lang('App.saveNewUser') . ' ID=' . $newID);
+      $this->logModel->logActivity($this->currentUserId, 'CREATE', lang('App.saveNewUser') . ' ID=' . $newID);
       return redirect()->to('/admin/users')->with('success', lang('App.newUserSuccessfullyAdded'));
    }
 
@@ -208,7 +208,7 @@ class Admin extends Controller
          'activeMenu' => 'majors',
          'majors' => $majorModel->getAllMajors(),
       ];
-      $this->logModel->logActivity($this->currentUserID, 'VIEW', lang('App.majors'));
+      $this->logModel->logActivity($this->currentUserId, 'VIEW', lang('App.majors'));
       return view('admin/majors', $dataView);
    }
 
@@ -224,7 +224,7 @@ class Admin extends Controller
          'activeMenu' => 'settings',
          'settings' => $settingModel->getAllSettings(),
       ];
-      $this->logModel->logActivity($this->currentUserID, 'VIEW', lang('App.settings'));
+      $this->logModel->logActivity($this->currentUserId, 'VIEW', lang('App.settings'));
       return view('admin/settings', $dataView);
    }
 
@@ -267,7 +267,7 @@ class Admin extends Controller
       $session = session();
 
       // ✅ Ambil daftar pengirim (semua yang pernah chat dengan admin)
-      $contacts = $chatModel->getChatContacts($this->currentUserID);
+      $contacts = $chatModel->getChatContacts($this->currentUserId);
 
       // ✅ Jika tidak ada userId yang dipilih, tampilkan user pertama dari daftar kontak
       if (!$userId && !empty($contacts)) {
@@ -276,33 +276,32 @@ class Admin extends Controller
 
       // ✅ Ambil data user yang sedang di-chat
       $receiver = $this->userModel->find($userId);
+
       if (!$receiver) {
          return redirect()->back()->with('error', 'User tidak ditemukan.');
       }
 
       // ✅ Ambil isi percakapan antara admin dan user
-      $messages = $chatModel->getMessages($this->currentUserID, $userId);
+      $messages = $chatModel->getMessages($this->currentUserId, $userId);
 
       // ✅ Tandai semua pesan sebagai telah dibaca
-      $chatModel->markMessagesAsRead($this->currentUserID, $userId);
+      $chatModel->markMessagesAsRead($this->currentUserId, $userId);
 
       // ✅ Simpan userId terakhir yang di-chat di session
       $lastOpenedChat = $session->get('lastOpenedChat');
       if ($lastOpenedChat != $userId) {
-         $this->logModel->logActivity($this->currentUserID, 'OPEN_CHATS', 'to: ' . $receiver['name']);
+         $this->logModel->logActivity($this->currentUserId, 'OPEN_CHATS', 'to: ' . $receiver['name']);
          $session->set('lastOpenedChat', $userId); // Simpan ID user terakhir
       }
-
       $dataView = $this->data + [
-         'pageTitle' => 'Chat dengan ' . esc($receiver['name']),
+         'pageTitle' => 'Chat',
          'activeMenu' => '',
          'contacts' => $contacts,
          'receiver' => $receiver,
          'messages' => $messages,
          'activeChatId' => $userId,
-         'currentUserID' => $this->currentUserID,
+         'currentUserId' => $this->currentUserId,
       ];
-
       return view('admin/chat', $dataView);
    }
 
@@ -340,7 +339,7 @@ class Admin extends Controller
          'file' => $fileName,
          'created_at' => date('Y-m-d H:i:s')
       ]);
-      $this->logModel->logActivity($this->currentUserID, 'SEND_CHAT', 'to: ' . $this->userModel->getUserNameById($userId)['name']);
+      $this->logModel->logActivity($this->currentUserId, 'SEND_CHAT', 'to: ' . $this->userModel->getUserNameById($userId)['name']);
       return $this->response->setJSON(['success' => true]);
    }
 
@@ -454,7 +453,7 @@ class Admin extends Controller
          'activeMenu' => 'activityLogs',
          'logs' => $this->logModel->getAllLogs(),
       ];
-      $this->logModel->logActivity($this->currentUserID, 'VIEW', lang('App.activityLogs'));
+      $this->logModel->logActivity($this->currentUserId, 'VIEW', lang('App.activityLogs'));
       return view('admin/activity_logs', $dataView);
    }
 }

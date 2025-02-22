@@ -1,51 +1,66 @@
 <?php
 
-use CodeIgniter\I18n\Time;
 
-/**
- * Generate custom CAPTCHA
- */
-function generate_captcha($config = [])
+// Fungsi untuk membuat gambar captcha
+function create_captcha_image($text)
 {
-   $word = isset($config['word'])
-      ? $config['word']
-      : substr(str_shuffle('0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'), 0, 6);
+   $width = 150;
+   $height = 30;
 
-   $imgWidth = $config['img_width'] ?? 150;
-   $imgHeight = $config['img_height'] ?? 50;
+   // Buat gambar
+   $image = imagecreate($width, $height);
 
-   // Pastikan folder ada di public/captcha/
-   $captchaPath = FCPATH . 'captcha/';
-   if (!is_dir($captchaPath)) {
-      mkdir($captchaPath, 0777, true);
+   // Warna background
+   $background = imagecolorallocate($image, 255, 255, 255);
+
+   // Warna teks
+   $text_color = imagecolorallocate($image, 0, 0, 0);
+
+   // Tambahkan noise (garis atau titik) untuk meningkatkan keamanan
+   for ($i = 0; $i < 5; $i++) {
+      $noise_color = imagecolorallocate($image, rand(100, 255), rand(100, 255), rand(100, 255));
+      imageline($image, rand(0, $width), rand(0, $height), rand(0, $width), rand(0, $height), $noise_color);
    }
 
-   // Nama file captcha
-   $filename = sha1($word . Time::now()) . '.png';
-   $filepath = $captchaPath . $filename;
+   // Tambahkan teks captcha ke gambar
+   imagestring($image, 5, 50, 10, $text, $text_color);
 
-   // Buat gambar dengan GD Library
-   // Buat gambar dengan GD Library
-   $image = imagecreate($imgWidth, $imgHeight);
-
-   // Tentukan warna background dan teks
-   $bgColor = imagecolorallocate($image, 235, 235, 235); // Background putih
-   $textColor = imagecolorallocate($image, 0, 0, 0); // Teks hitam
-
-   // **Pastikan background diisi dengan warna putih**
-   imagefilledrectangle($image, 0, 0, $imgWidth, $imgHeight, $bgColor);
-
-   // Tambahkan teks ke gambar
-   imagestring($image, 5, rand(10, 40), rand(10, 30), $word, $textColor);
-
-   // Simpan gambar
-   imagepng($image, $filepath);
+   // Simpan gambar ke file
+   $filename = md5($text) . '.png';
+   $filenameFullPath = WRITEPATH . 'captcha/' . $filename;
+   imagepng($image, $filenameFullPath);
    imagedestroy($image);
 
-   return [
-      'word' => $word,
-      'image_url' => base_url('captcha/' . $filename), // URL bisa diakses di browser
-      'filename' => $filename,
-      'path' => $filepath
-   ];
+   return $filename;
+}
+
+// Fungsi untuk membuat captcha
+function generate_captcha()
+{
+   $text = rand(1000, 9999); // Teks captcha acak
+   $expiration = time() + 300; // Expiration time: 5 menit dari sekarang
+
+   // Buat gambar captcha
+   $filename = create_captcha_image($text);
+
+   // Simpan teks captcha dan expiration time di session
+   session()->set([
+      'captcha_text' => (string)$text,
+      'captcha_expiration' => $expiration
+   ]);
+
+   // Kembalikan path gambar captcha
+   return $filename;
+}
+
+function clean_expired_captcha()
+{
+   $files = glob(WRITEPATH . 'captcha/*.png');
+   $now = time();
+
+   foreach ($files as $file) {
+      if (filemtime($file) < ($now - 300)) { // Hapus file yang lebih lama dari 5 menit
+         unlink($file);
+      }
+   }
 }

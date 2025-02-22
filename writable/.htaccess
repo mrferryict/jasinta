@@ -1,6 +1,9 @@
-<IfModule authz_core_module>
-	Require all denied
-</IfModule>
-<IfModule !authz_core_module>
+# Blokir akses ke semua file secara default
+<FilesMatch "^.*$">
 	Deny from all
-</IfModule>
+</FilesMatch>
+
+# Izinkan akses ke file gambar
+<FilesMatch "\.(png|jpg|jpeg|gif)$">
+	Allow from all
+</FilesMatch>

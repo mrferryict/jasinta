@@ -13,9 +13,14 @@ class All extends Seeder
         $this->call('SemestersSeeder');
         $this->call('StagesSeeder');
         $this->call('UserSeeder');
-        $this->call('ThesisSeeder');
-        $this->call('ProgressSeeder');
+        $this->call('ThesesSeeder');
         $this->call('SettingsSeeder');
         $this->call('AnnouncementsSeeder');
+        $this->call('TempUserSeeder');
+        $this->call('LecturersSeeder');
+        $this->call('CoordinatorsSeeder');
+        $this->call('UserStagesSeeder');
+        $this->call('AssignmentSeeder');
+        $this->call('ExaminersSeeder');
     }
 }

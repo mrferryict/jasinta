@@ -78,7 +78,7 @@ $stageRoutes = $s->getAllStages();
                               </a></li>
                         <?php elseif ($i['name'] == 'BAB 2' || $i['name'] == 'BAB 3' || $i['name'] == "BAB 4" || $i['name'] == "BAB 5") : ?>
                         <?php else : ?>
-                           <li class="nav-item small"><a href="<?= base_url('admin/' . $i['route']) ?>" class="nav-link"><i class="nav-icon bi bi-clipboard-check"></i>
+                           <li class="nav-item small"><a href="<?= base_url('admin/' . strtolower(str_replace(' ', '_', $i['name']))) ?>" class="nav-link"><i class="nav-icon bi bi-clipboard-check"></i>
                                  <p><?= $i['name'] ?></p>
                               </a></li>
                         <?php endif; ?>
@@ -100,7 +100,7 @@ $stageRoutes = $s->getAllStages();
                         <p class="<?= $passed ? '' : 'text-secondary' ?>"><?= $i++ . '. ' . $sr['name'] ?></p>
                      </a>
                   </li>
-                  <?php if ($sr['name'] == $student['stage_name']) $passed = false; ?>
+                  <?php if ($sr['name'] == $student['stage_name'] || (!$student['stage_name'])) $passed = false; ?>
                <?php endforeach; ?>
             <?php endif; ?>
 
@@ -115,14 +115,6 @@ $stageRoutes = $s->getAllStages();
                      <p><?= langUppercase('App.defenses') ?></p>
                   </a></li>
 
-               <?php if ($isKapordi): ?>
-                  <li class="nav-header"><?= langUppercase('App.monitoring') ?></li>
-                  <?php foreach ($stages as $stage): ?>
-                     <li class="nav-item"><a href="<?= base_url('lecturer/monitoring/' . strtolower(str_replace(' ', '_', $stage))) ?>" class="nav-link"><i class="nav-icon bi bi-clipboard-check"></i>
-                           <p><?= $stage ?></p>
-                        </a></li>
-                  <?php endforeach; ?>
-               <?php endif; ?>
             <?php endif; ?>
 
          </ul>

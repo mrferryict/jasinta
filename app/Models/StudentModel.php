@@ -37,18 +37,18 @@ class StudentModel extends Model
    /**
     * Get the current stage of a student
     */
-   public function getStudentStage($studentId)
+   public function getStudentStage($student_id)
    {
-      $result = $this->select('stages.name')
-         ->join('thesis', 'thesis.student_id = users.id', 'left')
-         ->join('progress', 'progress.thesis_id = thesis.id', 'left')
-         ->join('stages', 'stages.id = progress.stage_id', 'left')
-         ->where('users.id', $studentId)
-         ->orderBy('progress.created_at', 'DESC')
-         ->first();
-
-      return $result ? $result['name'] : 'PENDAFTARAN'; // Default jika tidak ada data
+      return $this->db->table('user_stages')
+         ->select('stages.id, stages.name, stages.order, user_stages.started_at, user_stages.passed_at')
+         ->join('stages', 'stages.id = user_stages.stage_id', 'left')
+         ->where('user_stages.user_id', $student_id)
+         ->orderBy('stages.order', 'DESC')
+         ->limit(1)
+         ->get()
+         ->getRowArray(); // Mengembalikan satu baris sebagai array
    }
+
 
    /**
     * Get all active students
@@ -65,22 +65,26 @@ class StudentModel extends Model
     */
    public function getStudentDetails($studentId)
    {
-      return $this->select('
+      return $this->db->table('users')
+         ->select('
             users.*,
             COALESCE(stages.name, "") AS stage_name,
-            COALESCE(thesis.title, "") AS thesis_title,
+            COALESCE(theses.title, "") AS thesis_title,
             (CASE
                 WHEN users.verified_at IS NULL THEN "INACTIVE"
                 ELSE "ACTIVE"
             END) AS student_status
         ')
-         ->join('thesis', 'thesis.student_id = users.id', 'left')
-         ->join('progress', 'progress.thesis_id = thesis.id', 'left')
-         ->join('stages', 'stages.id = progress.stage_id', 'left')
+         ->join('theses', 'theses.student_id = users.id', 'left') // Menghubungkan ke tugas akhir
+         ->join('user_stages', 'user_stages.user_id = users.id', 'left') // Menghubungkan ke tahapan mahasiswa
+         ->join('stages', 'stages.id = user_stages.stage_id', 'left') // Ambil nama tahap
          ->where('users.id', $studentId)
-         ->groupBy('users.id') // Menghindari duplikasi jika ada banyak progress
-         ->first();
+         ->orderBy('stages.order', 'DESC') // Ambil tahapan tertinggi
+         ->limit(1) // Hanya ambil satu hasil
+         ->get()
+         ->getRowArray(); // Mengembalikan hasil sebagai array
    }
+
 
    /**
     * Get all students with their progress stage
@@ -93,17 +97,6 @@ class StudentModel extends Model
          ->join('stages', 'stages.id = progress.stage_id', 'left')
          ->where('users.division', 'STUDENT')
          ->findAll();
-   }
-
-   /**
-    * Count total active students
-    */
-   public function countActiveStudents()
-   {
-      return $this->where('division', 'STUDENT')
-         ->where('verified_at IS NOT NULL')
-         ->where('deleted_at IS NULL')
-         ->countAllResults();
    }
 
    /**
@@ -137,99 +130,27 @@ class StudentModel extends Model
          ->first();
    }
 
-   /**
-    * Get prerequisite requirements for proposal stage
-    */
-   public function getPrerequisiteRequirements($studentId)
+   // STUDENT PROGRESS
+   public function getStudentProgress()
    {
-      return $this->db->table('prasyarat')
-         ->select('prasyarat.id, prasyarat.description, prasyarat.requirement_type, prasyarat_approvals.status as approval_status')
-         ->join('prasyarat_approvals', 'prasyarat.id = prasyarat_approvals.prasyarat_id AND prasyarat_approvals.student_id = ' . $studentId, 'left')
-         ->where('prasyarat.stage', 'SYARAT PROPOSAL')
+      return $this->select('users.id, users.name, users.number, stages.order AS `order`, stages.name AS stage, user_stages.started_at, user_stages.passed_at')
+         ->join('user_stages', 'user_stages.user_id = users.id', 'left')
+         ->join('stages', 'stages.id = user_stages.stage_id', 'left')
+         ->where('users.division', 'STUDENT')
+         ->where('user_stages.passed_at IS NULL') // Hanya ambil yang belum lulus tahapannya
+         ->orderBy('stages.order', 'DESC')
          ->get()
          ->getResultArray();
    }
 
-   /**
-    * Save student's submission for a prerequisite requirement
-    */
-   public function savePrerequisiteSubmission($studentId, $requirementId, $data)
-   {
-      return $this->db->table('prasyarat_approvals')
-         ->insert([
-            'prasyarat_id' => $requirementId,
-            'student_id' => $studentId,
-            'answer' => $data['answer'] ?? null,
-            'file_path' => $data['file_path'] ?? null,
-            'submitted_at' => date('Y-m-d H:i:s')
-         ]);
-   }
 
-   /**
-    * Get student's thesis title
-    */
-   public function getStudentThesis($studentId)
+   // Menghitung total STUDENT yang sedang aktif
+   public function countActiveStudents()
    {
-      return $this->db->table('thesis')
-         ->select('id, title, created_at')
-         ->where('student_id', $studentId)
-         ->orderBy('created_at', 'DESC')
-         ->limit(1)
-         ->get()
-         ->getRowArray();
-   }
-
-   /**
-    * Get student's supervisors (Dosen Pembimbing)
-    */
-   public function getStudentSupervisors($studentId)
-   {
-      return $this->db->table('appointment_details')
-         ->select('users.id, users.name, appointment_details.task_type')
-         ->join('users', 'appointment_details.user_id = users.id')
-         ->join('appointments', 'appointment_details.appointment_id = appointments.id')
-         ->join('thesis', 'appointments.thesis_id = thesis.id')
-         ->where('thesis.student_id', $studentId)
-         ->get()
-         ->getResultArray();
-   }
-
-   /**
-    * Get student's evaluation scores
-    */
-   public function getStudentScores($studentId)
-   {
-      return $this->db->table('scores')
-         ->select('scores.score, scores.comments, users.name as evaluator')
-         ->join('users', 'scores.evaluator_id = users.id')
-         ->join('thesis', 'scores.thesis_id = thesis.id')
-         ->where('thesis.student_id', $studentId)
-         ->get()
-         ->getResultArray();
-   }
-
-   /**
-    * Get student's messages (chat history)
-    */
-   public function getStudentMessages($studentId)
-   {
-      return $this->db->table('messages')
-         ->select('messages.content, messages.sender_id, messages.receiver_id, messages.read_at, messages.created_at')
-         ->where('messages.sender_id', $studentId)
-         ->orWhere('messages.receiver_id', $studentId)
-         ->orderBy('messages.created_at', 'ASC')
-         ->get()
-         ->getResultArray();
-   }
-
-   /**
-    * Mark messages as read
-    */
-   public function markMessagesAsRead($studentId)
-   {
-      return $this->db->table('messages')
-         ->where('receiver_id', $studentId)
-         ->where('read_at IS NULL')
-         ->update(['read_at' => date('Y-m-d H:i:s')]);
+      return $this->db->table('users')
+         ->join('theses', 'theses.student_id = users.id', 'inner')
+         ->where('users.division', 'STUDENT')
+         ->where('users.status', 'ACTIVE')
+         ->countAllResults();
    }
 }

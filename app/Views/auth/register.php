@@ -114,7 +114,7 @@
 
                         <!-- ✅ CAPTCHA -->
                         <div class="form-group mb-3 last form-control-md">
-                           <img src="<?= esc($captcha['image_url']) ?>" alt="CAPTCHA Image" class="mb-3">
+                           <img src="<?= esc($captcha_url) ?>" alt="CAPTCHA Image" class="mb-3">
                            <label class="mt-2"><?= lang('App.enterCaptcha'); ?></label>
                            <input type="text" name="captcha" class="form-control" required>
                         </div>
