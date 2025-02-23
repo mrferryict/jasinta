@@ -16,7 +16,7 @@ class UserController extends ResourceController
 
    /**
     * API: Toggle User Status (Activate/Deactivate)
-    * URL: POST /users/toggle-status
+    * URL: POST /user/toggle-status
     */
    public function toggleStatus()
    {

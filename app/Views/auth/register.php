@@ -26,7 +26,7 @@
                   <div class="d-flex align-items-center mt-4 mb-1">
                      <img src="<?= f_images('logo_jasinta.png') ?>" alt="Logo Kiri" class="mr-3" style="height: 80px;">
                      <h3 class="mb-0 ml-auto fw-bold" style="font-family: 'Times New Roman', Times, serif;">
-                        <?= lang('App.name') ?>
+                        <?= lang('App.appName') ?>
                      </h3>
                      <img src="<?= f_images('logo_stmik.png') ?>" alt="Logo Kanan" class="ml-auto" style="height: 90px;">
                   </div>
@@ -88,10 +88,10 @@
 
                         <!-- ✅ REGISTRATION TYPE -->
                         <div class="form-group field--not-empty">
-                           <label for="is_repeating"><?= lang('App.registrationType') ?></label>
-                           <select name="is_repeating" class="form-control">
-                              <option value="1" <?= old('is_repeating') == '1' ? 'selected' : '' ?>><?= lang('App.newRegistration') ?></option>
-                              <option value="0" <?= old('is_repeating') == '0' ? 'selected' : '' ?>><?= lang('App.repeatRegistration') ?></option>
+                           <label for="academic_status"><?= lang('App.registrationType') ?></label>
+                           <select name="academic_status" class="form-control">
+                              <option value="NEW" <?= old('academic_status') == 'NEW' ? 'selected' : '' ?>><?= lang('App.newRegistration') ?></option>
+                              <option value="REPEAT" <?= old('academic_status') == 'REPEAT' ? 'selected' : '' ?>><?= lang('App.repeatRegistration') ?></option>
                            </select>
                         </div>
 

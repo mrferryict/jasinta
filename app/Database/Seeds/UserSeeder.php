@@ -13,9 +13,7 @@ class UserSeeder extends Seeder
 
         // Contoh Data Persons (Mahasiswa, Dosen, Administrator)
         $users = [
-            ['STUDENT', 'student@student.com', '33333333', 'STUDENT', 2, 1],
-            ['ADMIN', 'admin@admin.com', '11111111', 'ADMIN', null, null],
-            ['LECTURER', 'lecturer@lecturer.com', '22222222', 'LECTURER', null, null],
+            ['ADMIN', 'admin@stmik.com', '11111111', 'ADMIN', null, null],
             ['Chandra Setiawan', 'chandra@stmik.com', '23570001', 'STUDENT', 1, 1],
             ['Dede Yusuf', 'dede@stmik.com', '23560002', 'STUDENT', 2, 1],
             ['Eko Purnomo', 'eko@stmik.com', '23360003', 'STUDENT', 3, 1],
@@ -26,6 +24,8 @@ class UserSeeder extends Seeder
             ['Nana Sujana', 'nana@stmik.com', '23560008', 'STUDENT', 2, 1],
             ['Opin Saputra', 'opin@stmik.com', '23560009', 'STUDENT', 2, 1],
             ['Riris Setyo', 'riris@stmik.com', '23570010', 'STUDENT', 1, 1],
+            ['Utami Wijaya', 'utami@stmik.com', '23360011', 'STUDENT', 3, 1],
+            ['Wahyu Setiawan', 'wahyu@stmik.com', '23560012', 'STUDENT', 2, 1],
         ];
         foreach ($users as $u) {
             $db->table('users')->insert([

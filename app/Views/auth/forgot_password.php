@@ -25,7 +25,7 @@
                   <div class="d-flex align-items-center mt-4 mb-1">
                      <img src="<?= f_images('logo_jasinta.png') ?>" alt="Logo Kiri" class="mr-3" style="height: 80px;">
                      <h3 class="mb-0 ml-auto fw-bold" style="font-family: 'Times New Roman', Times, serif;">
-                        <?= lang('App.name') ?></h3>
+                        <?= lang('App.appName') ?></h3>
                      <img src="<?= f_images('logo_stmik.png') ?>" alt="Logo Kanan" class="ml-auto" style="height: 90px;">
                   </div>
                   <div class="mt-1 mb-1 text-center">

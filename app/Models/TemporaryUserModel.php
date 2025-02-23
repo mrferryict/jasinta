@@ -12,7 +12,7 @@ class TemporaryUserModel extends Model
       'name',
       'email',
       'nim',
-      'is_repeating',
+      'academic_status',
       'password',
       'ip_address',
       'activation_token',
@@ -21,61 +21,39 @@ class TemporaryUserModel extends Model
    ];
 
    /**
-    * Tambahkan pendaftar baru ke tabel temporary_users
+    * Ambil semua pendaftar
     */
-   public function addTemporaryUser($data)
+   public function getAllTemporaryUsers()
    {
-      $result = $this->insert($data);
-      return $result;
+      return $this->findAll();
    }
 
-   /**
-    * Ambil pendaftar berdasarkan email
-    */
+   public function getTemporaryUserById($id)
+   {
+      return $this->where('id', $id)->first();
+   }
+
    public function getTemporaryUserByEmail($email)
    {
       return $this->where('email', $email)->first();
    }
 
-   /**
-    * Ambil pendaftar berdasarkan token aktivasi
-    */
+   public function getEmailbyId($id)
+   {
+      $result = $this->select('email')->where('id', $id)->first();
+      log_message('info', '***** $result = ' . $result);
+      return $result ? $result['email'] : null;
+   }
+
    public function getTemporaryUserByToken($token)
    {
       return $this->where('activation_token', $token)->first();
    }
 
-   /**
-    * Pindahkan pengguna dari temporary_users ke users setelah aktivasi
-    */
-   public function activateUser($temporaryUser)
+   public function addTemporaryUser($data)
    {
-      $db = \Config\Database::connect();
-      $builder = $db->table('users');
-
-      $majorId = $this->determineMajor($temporaryUser['nim']);
-      $semesterId = $this->getActiveSemester();
-
-      $userData = [
-         'name'         => $temporaryUser['name'],
-         'email'        => $temporaryUser['email'],
-         'number'       => $temporaryUser['nim'],
-         'password'     => $temporaryUser['password'],
-         'division'     => 'STUDENT',
-         'major_id'     => $majorId,
-         'semester_id'  => $semesterId,
-         'is_repeating' => $temporaryUser['is_repeating'],
-         'token'        => null,
-         'token_expired_at' => null,
-         'verified_at'  => date('Y-m-d H:i:s'),
-      ];
-
-      // Insert data ke tabel users
-      $builder->insert($userData);
-      $userId = $db->insertID();
-
-      // Hapus dari temporary_users setelah berhasil dipindahkan
-      return $this->delete($temporaryUser['id']);
+      $result = $this->insert($data);
+      return $result;
    }
 
    /**
@@ -103,7 +81,7 @@ class TemporaryUserModel extends Model
    private function getActiveSemester()
    {
       $db = \Config\Database::connect();
-      $semester = $db->table('semesters')->select('id')->where('is_active', 1)->get()->getRowArray();
+      $semester = $db->table('semesters')->select('id')->where('status', 'ACTIVE')->get()->getRowArray();
       return $semester ? $semester['id'] : null;
    }
 
@@ -115,11 +93,49 @@ class TemporaryUserModel extends Model
       return $this->where('expired_at <', date('Y-m-d H:i:s'))->delete();
    }
 
-   /**
-    * Hapus pendaftar dari temporary_users secara manual
-    */
-   public function deleteTemporaryUser($email)
+   public function deleteTemporaryUserById($id)
    {
-      return $this->where('email', $email)->delete();
+      return $this->where('id', $id)->delete();
+   }
+
+   public function reject($temporaryUserId)
+   {
+      return $this->deleteTemporaryUserById($temporaryUserId);
+   }
+
+   public function approve($temporaryUserId)
+   {
+      return $this->activateUser($temporaryUserId);
+   }
+
+   /**
+    * Pindahkan pengguna dari temporary_users ke users setelah aktivasi
+    */
+   public function activateUser($id)
+   {
+      $db = \Config\Database::connect();
+      $builder = $db->table('users');
+
+      $temporaryUser = $this->getTemporaryUserById($id);
+
+      $majorId = $this->determineMajor($temporaryUser['nim']);
+      $semesterId = $this->getActiveSemester();
+
+      $userData = [
+         'name'         => $temporaryUser['name'],
+         'email'        => $temporaryUser['email'],
+         'number'       => $temporaryUser['nim'],
+         'password'     => $temporaryUser['password'],
+         'division'     => 'STUDENT',
+         'major_id'     => $majorId,
+         'semester_id'  => $semesterId,
+         'academic_status' => $temporaryUser['academic_status'],
+         'token'        => null,
+         'token_expired_at' => null,
+         'verified_at'  => date('Y-m-d H:i:s'),
+      ];
+
+      // Insert data ke tabel users
+      return $builder->insert($userData);
    }
 }

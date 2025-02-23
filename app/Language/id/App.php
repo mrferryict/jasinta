@@ -1,6 +1,6 @@
 <?php
 return [
-   'name' => 'JASINTA',
+   'appName' => 'JASINTA',
    'welcomeToPortal' => 'Selamat datang di Portal',
    'JASINTA' => 'STMIK <u>Ja</u>yakarta <u>S</u>istem <u>In</u>formasi <u>T</u>ugas <u>A</u>khir',
    'pleaseLogin' => 'Silakan Login',
@@ -25,6 +25,7 @@ return [
    'semesterStart' => 'Semester',
    'confirmPassword' => 'Konfirmasi Kata Sandi',
    'nim' => 'NIM',
+   'name' => 'Nama',
    'backToLogin' => 'Kembali ke Layar Login',
    'totalActiveStudents' => 'Total Mahasiswa Peserta',
    'studentsOnTrack' => 'Mahasiswa Tepat Waktu',
@@ -94,4 +95,11 @@ return [
    'EXAMINER_MEMBER' => 'Dosen Penguji (Anggota)',
    'MATERIAL_SUPERVISOR' => 'Dosen Pembimbing (Materi)',
    'TECHNICAL_SUPERVISOR' => 'Dosen Pembimbing (Teknis)',
+   'supervisedStudents' => 'Daftar Mahasiswa yang dibimbing',
+   'assignedExaminations' => 'Daftar Mahasiswa yang disidang',
+   'waitingEmailVerification' => 'Menunggu verifikasi email',
+   'registrants' => 'Pendaftar',
+   'approve' => 'Setujui',
+   'noRegistrant' => 'Belum ada pendaftar',
+   'reject' => 'Tolak',
 ];

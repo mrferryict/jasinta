@@ -2,14 +2,14 @@
 
 <?= $this->section('content') ?>
 <div class="container mt-4">
-   <h2 class="mb-4">Lecturer Dashboard</h2>
+   <h2 class="mb-4"><?= $pageTitle ?></h2>
 
    <div class="row">
       <!-- Supervised Students -->
       <div class="col-md-6">
          <div class="card">
             <div class="card-header bg-primary text-white">
-               Supervised Students
+               <?= lang('App.supervisedStudents') ?>
             </div>
             <div class="card-body">
                <ul class="list-group">
@@ -29,7 +29,7 @@
       <div class="col-md-6">
          <div class="card">
             <div class="card-header bg-success text-white">
-               Assigned Examinations
+               <?= lang('App.assignedExaminations') ?>
             </div>
             <div class="card-body">
                <ul class="list-group">

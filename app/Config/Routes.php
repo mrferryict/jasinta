@@ -11,6 +11,7 @@ $routes = Services::routes();
 
 // Default Home Route
 $routes->get('/', 'Home::index');
+$routes->get('captcha/show/(:any)', 'Captcha::show/$1');
 
 
 
@@ -34,10 +35,15 @@ $routes->group('admin', ['filter' => 'access:ADMIN'], function ($routes) {
    $routes->get('users', 'Admin::users');
    $routes->get('create_user', 'Admin::createUser');
    $routes->post('save_user', 'Admin::saveUser');
+   $routes->get('registrants', 'Admin::registrants');
 
-   $routes->post('users/toggle-status', 'UserController::toggleStatus'); // API
+   $routes->post('user/toggle-status', 'UserController::toggleStatus'); // API
    $routes->post('users/delete', 'UserController::deleteUser'); // API
+
    $routes->post('log/exportToExcel', 'LogController::exportToExcel'); // API
+
+   $routes->post('registrant/approve', 'RegistrantController::approve'); // API
+   $routes->post('registrant/reject', 'RegistrantController::reject'); // API
 
    $routes->get('majors', 'Admin::majors');
    $routes->get('settings', 'Admin::settings');

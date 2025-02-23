@@ -54,8 +54,8 @@ class Auth extends Controller
 
       if (strtolower($this->request->getMethod()) === 'get') {
          helper('captcha');
-         $captchaImage = generate_captcha();
-         $captchaURL = str_replace('/public', '', base_url()) . 'writable/captcha/' . $captchaImage;
+         $captchaFileName = generate_captcha();
+         $captchaURL = base_url('captcha/show/' . $captchaFileName);
          return view('auth/login', ['captcha_url' => $captchaURL]);
       }
 
@@ -215,7 +215,7 @@ class Auth extends Controller
 
       $email = $this->request->getPost('email');
       $nim = $this->request->getPost('nim');
-      $is_repeating = (int)$this->request->getPost('is_repeating');
+      $academicStatus = $this->request->getPost('academic_status');
 
       // 1. Validasi format email
       if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
@@ -256,31 +256,19 @@ class Auth extends Controller
          'name' => $this->request->getPost('name'), // Bersihkan input!
          'email' => $email,
          'nim' => $nim,
-         'is_repeating' => $is_repeating,
+         'academic_status' => $academicStatus,
          'password' => $pass,
          'ip_address' => $this->request->getIPAddress(),
          'activation_token' => bin2hex(random_bytes(16)),
          'created_at' => Time::now()->format('Y-m-d H:i:s'),
          'expired_at' => Time::now()->addDays(1)->format('Y-m-d H:i:s')
       ];
-      $newID = $this->temporaryUserModel->addTemporaryUser($newTempUser);
+      $newId = $this->temporaryUserModel->addTemporaryUser($newTempUser);
 
-      if ($newID) {
-         $this->logModel->logActivity(null, 'REGISTER', 'ID=' . $newID . ' (Nama:' . $this->request->getPost('name') . ', Email:' . $email . ')');
+      if ($newId) {
+         $this->logModel->logActivity(null, 'REGISTER', 'ID=' . $newId . ' (Nama:' . $this->request->getPost('name') . ', Email:' . $email . ')');
       }
-
-      // Mahasiswa Langsung Terverifikasi (langsung simpan ke person dan user)
-      $dataNewUser = [
-         'name'         => $this->request->getPost('name'),
-         'email'        => $email,
-         'nim'          => $nim,
-         'major_id'     => $majorID,
-         'password'     => $pass,
-         'ip_address'   => getUserIpAddress(),
-         'is_repeating' => $is_repeating
-      ];
-      $this->activateUserImmediately($dataNewUser);
-      $pesan = lang('App.registrationSucceed') . '. ' . lang('App.waitingAdminApproval');
+      $pesan = lang('App.waitingEmailVerification');
       return redirect()->to('/auth/login')->with('success', $pesan);
    }
 

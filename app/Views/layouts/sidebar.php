@@ -14,7 +14,8 @@ $stageRoutes = $s->getAllStages();
                   default => 'admin'
                }) ?>" class="brand-link">
          <img src="<?= f_images('logo_jasinta_light.png') ?>" alt="Logo JASINTA" class="brand-image" />
-         <span class="brand-text fw-light"><?= langUppercase('App.name') ?></span>
+         <span class="brand-text fw-light"><?= langUppercase('App.appName') ?> </span>
+         <i class="bi bi-house ms-1"></i>
       </a>
    </div>
    <!--end::Sidebar Brand-->
@@ -31,6 +32,12 @@ $stageRoutes = $s->getAllStages();
                   <a href="<?= base_url('admin/activity_logs') ?>" class="nav-link <?= ($activeMenu == 'activityLogs') ? 'active' : '' ?>">
                      <i class="nav-icon bi bi-clock-history"></i>
                      <p><?= langUppercase('App.activityLogs') ?></p>
+                  </a>
+               </li>
+               <li class="nav-item">
+                  <a href="<?= base_url('admin/registrants') ?>" class="nav-link <?= ($activeMenu == 'registrants') ? 'active' : '' ?>">
+                     <i class="nav-icon bi bi-card-list"></i>
+                     <p><?= langUppercase('App.registrants') ?></p>
                   </a>
                </li>
                <li class="nav-item <?= (in_array($activeMenu, ['users', 'majors', 'settings'])) ? 'menu-open' : '' ?>">

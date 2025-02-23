@@ -13,9 +13,10 @@ class SettingsSeeder extends Seeder
         $stages = array_column($stageModel->orderBy('id', 'ASC')->findAll(), 'name');
 
         $data = [
-            ['key' => 'app_name', 'value' => 'JASINTA', 'created_at' => date('Y-m-d H:i:s')],
-            ['key' => 'campuss_name', 'value' => 'STMIK JAYAKARTA', 'created_at' => date('Y-m-d H:i:s')],
+            ['key' => 'appName', 'value' => 'JASINTA', 'created_at' => date('Y-m-d H:i:s')],
+            ['key' => 'campussName', 'value' => 'STMIK JAYAKARTA', 'created_at' => date('Y-m-d H:i:s')],
             ['key' => 'copyright', 'value' => ' - &copy;2025 JASINTA - STMIK JAYAKARTA SISTEM INFORMASI MONITORING TUGAS AKHIR', 'created_at' => date('Y-m-d H:i:s')],
+            ['key' => 'maxSupervisionsPerLecturer', 'value' => '10', 'created_at' => date('Y-m-d H:i:s')],
         ];
 
         // Insert batch data ke dalam tabel settings

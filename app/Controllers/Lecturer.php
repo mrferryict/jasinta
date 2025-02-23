@@ -67,7 +67,7 @@ class Lecturer extends Controller
       $examinedStudents = $this->assignmentModel->getExaminedStudents($lecturerId);
 
       $dataView = $this->data + [
-         'pageTitle' => 'DASHBOARD DOSEN',
+         'pageTitle' => 'DASBOR DOSEN',
          'supervisedStudents' => $supervisedStudents,
          'examinedStudents' => $examinedStudents,
          'infoBoxes' => [

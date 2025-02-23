@@ -22,14 +22,17 @@ class ThesesSeeder extends Seeder
          'Sistem Rekomendasi Buku Berdasarkan Minat Pembaca Menggunakan Collaborative Filtering',
          'Pengembangan Aplikasi Manajemen Inventaris Barang Berbasis Web',
          'Analisis Sentimen pada Media Sosial Twitter Menggunakan Algoritma Naive Bayes',
+         'Rancang Bangun Aplikasi Parkir di PT XYZ',
+         'Sistam Pakar untuk Pengambilan Keputusan di Bursa Efek Jakarta',
       ];
 
       // Loop untuk 10 mahasiswa (student_id 1-10)
-      for ($studentId = 4; $studentId <= 13; $studentId++) {
+      for ($studentId = 2; $studentId <= 13; $studentId++) {
          $theses[] = [
-            'title'       => $titles[$studentId - 4], // Ambil judul dari array
+            'title'       => $titles[$studentId - 2], // Ambil judul dari array
             'student_id'  => $studentId,
-            'created_at'  => date('Y-m-d H:i:s'),
+            'proposed_at'  => date('Y-m-d H:i:s'),
+            'approved_at'  => date('Y-m-d H:i:s'),
          ];
       }
 

@@ -13,6 +13,7 @@ use App\Models\SemesterModel;
 use App\Models\SettingModel;
 use App\Models\StageModel;
 use App\Models\StudentModel;
+use App\Models\TemporaryUserModel;
 use App\Models\UserModel;
 
 use Config\Services;
@@ -20,7 +21,6 @@ use Config\Services;
 class Admin extends Controller
 {
    protected $settings;
-   protected $session;
 
    protected $announcementModel;
    protected $chatModel;
@@ -30,6 +30,7 @@ class Admin extends Controller
    protected $settingModel;
    protected $stageModel;
    protected $studentModel;
+   protected $temporaryUserModel;
    protected $userModel;
 
    protected $currentUserId;
@@ -37,7 +38,6 @@ class Admin extends Controller
 
    public function __construct()
    {
-      $this->session          = session();
       $this->settings         = Services::settingsService()->getSettingsAsArray();
 
       $this->announcementModel = new AnnouncementModel();
@@ -48,13 +48,14 @@ class Admin extends Controller
       $this->settingModel     = new SettingModel();
       $this->stageModel       = new StageModel();
       $this->studentModel     = new StudentModel();
+      $this->temporaryUserModel = new TemporaryUserModel();
       $this->userModel        = new UserModel();
 
-      $this->currentUserId    = (int)session()->get('user_id');
+      $this->currentUserId    = (int) session()->get('user_id');
       $sendersList = $this->chatModel->getChatSendersWithUnreadCount($this->currentUserId);
       $this->data = [
          'settings'     => $this->settings,
-         'sessions'     => $this->session,
+         'sessions'     => session(),
          'sendersList'  => $sendersList,
       ];
    }
@@ -110,18 +111,29 @@ class Admin extends Controller
       $this->logModel->logActivity($this->currentUserId, 'VIEW', lang('App.dashboard'));
       return view('admin/dashboard', $dataView);
    }
+   //
+   //  MASTER DATA: REGISTRANT
+   //
+   public function registrants()
+   {
+      $dataView = $this->data + [
+         'pageTitle' => lang('App.registrants'),
+         'activeMenu' => 'registrants',
+         'registrants' => $this->temporaryUserModel->getAllTemporaryUsers()
+      ];
+      $this->logModel->logActivity($this->currentUserId, 'VIEW', lang('App.registrants'));
+      return view('admin/registrants', $dataView);
+   }
 
    //
    //  MASTER DATA: USERS
    //
    public function users()
    {
-      $userModel = new UserModel();
-
       $dataView = $this->data + [
          'pageTitle' => lang('App.users'),
          'activeMenu' => 'users',
-         'users' => $userModel->getAllUsers()
+         'users' => $this->userModel->getAllUsers()
       ];
       $this->logModel->logActivity($this->currentUserId, 'VIEW', lang('App.users'));
       return view('admin/users', $dataView);
@@ -129,14 +141,11 @@ class Admin extends Controller
 
    public function createUser()
    {
-      $majorModel = new MajorModel();
-      $semesterModel = new SemesterModel();
-
       $dataView = $this->data + [
          'pageTitle' => lang('App.createUser'),
          'activeMenu' => 'users',
          'majors' => $this->majorModel->getAllMajors(),
-         'semesters' => $semesterModel->getActiveSemesters(),
+         'semesters' => $this->semesterModel->getActiveSemesters(),
       ];
       $this->logModel->logActivity($this->currentUserId, 'VIEW', lang('App.createUser'));
       return view('admin/create_user', $dataView);
@@ -191,8 +200,8 @@ class Admin extends Controller
       // Hash password sebelum disimpan
       $postData['password'] = password_hash($postData['password'], PASSWORD_DEFAULT);
       $postData['verified_at'] = date('Y-m-d H:i:s');
-      $newID = $this->userModel->insert($postData);
-      $this->logModel->logActivity($this->currentUserId, 'CREATE', lang('App.saveNewUser') . ' ID=' . $newID);
+      $newId = $this->userModel->insert($postData);
+      $this->logModel->logActivity($this->currentUserId, 'CREATE', lang('App.saveNewUser') . ' ID=' . $newId);
       return redirect()->to('/admin/users')->with('success', lang('App.newUserSuccessfullyAdded'));
    }
 
@@ -201,12 +210,10 @@ class Admin extends Controller
    //
    public function majors()
    {
-      $majorModel = new MajorModel();
-
       $dataView = $this->data + [
          'pageTitle' => lang('App.majors'),
          'activeMenu' => 'majors',
-         'majors' => $majorModel->getAllMajors(),
+         'majors' => $this->majorModel->getAllMajors(),
       ];
       $this->logModel->logActivity($this->currentUserId, 'VIEW', lang('App.majors'));
       return view('admin/majors', $dataView);
@@ -217,12 +224,10 @@ class Admin extends Controller
    //
    public function settings()
    {
-      $settingModel = new SettingModel();
-
       $dataView = $this->data + [
          'pageTitle' => lang('App.settings'),
          'activeMenu' => 'settings',
-         'settings' => $settingModel->getAllSettings(),
+         'settings' => $this->settingModel->getAllSettings(),
       ];
       $this->logModel->logActivity($this->currentUserId, 'VIEW', lang('App.settings'));
       return view('admin/settings', $dataView);
@@ -263,11 +268,8 @@ class Admin extends Controller
 
    public function chat($userId = null)
    {
-      $chatModel = new ChatModel();
-      $session = session();
-
       // ✅ Ambil daftar pengirim (semua yang pernah chat dengan admin)
-      $contacts = $chatModel->getChatContacts($this->currentUserId);
+      $contacts = $this->chatModel->getChatContacts($this->currentUserId);
 
       // ✅ Jika tidak ada userId yang dipilih, tampilkan user pertama dari daftar kontak
       if (!$userId && !empty($contacts)) {
@@ -282,16 +284,16 @@ class Admin extends Controller
       }
 
       // ✅ Ambil isi percakapan antara admin dan user
-      $messages = $chatModel->getMessages($this->currentUserId, $userId);
+      $messages = $this->chatModel->getMessages($this->currentUserId, $userId);
 
       // ✅ Tandai semua pesan sebagai telah dibaca
-      $chatModel->markMessagesAsRead($this->currentUserId, $userId);
+      $this->chatModel->markMessagesAsRead($this->currentUserId, $userId);
 
       // ✅ Simpan userId terakhir yang di-chat di session
-      $lastOpenedChat = $session->get('lastOpenedChat');
+      $lastOpenedChat = session()->get('lastOpenedChat');
       if ($lastOpenedChat != $userId) {
          $this->logModel->logActivity($this->currentUserId, 'OPEN_CHATS', 'to: ' . $receiver['name']);
-         $session->set('lastOpenedChat', $userId); // Simpan ID user terakhir
+         session()->set('lastOpenedChat', $userId); // Simpan ID user terakhir
       }
       $dataView = $this->data + [
          'pageTitle' => 'Chat',
@@ -331,8 +333,7 @@ class Admin extends Controller
          return $this->response->setJSON(['error' => 'Pesan atau file harus diisi'])->setStatusCode(400);
       }
 
-      $chatModel = new ChatModel();
-      $chatModel->insert([
+      $this->chatModel->insert([
          'sender_id' => $adminId,
          'receiver_id' => $userId,
          'message' => $message,

@@ -3,11 +3,11 @@
 
 <head>
    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-   <title><?= $settings['app_name'] ?></title>
+   <title><?= $settings['appName'] ?></title>
    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-   <meta name="title" content="<?= esc($settings['app_name']) ?>" />
+   <meta name="title" content="<?= esc($settings['appName']) ?>" />
    <meta name="author" content="<?= langUppercase('App.footerCopyright') ?>" />
-   <meta name="description" content="<?= esc($settings['app_name']) ?>" />
+   <meta name="description" content="<?= esc($settings['appName']) ?>" />
 
    <!-- Fonts -->
    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/source-sans-3@5.0.12/index.css" crossorigin="anonymous" />
